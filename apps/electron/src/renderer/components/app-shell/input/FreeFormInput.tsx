@@ -1426,7 +1426,9 @@ export function FreeFormInput({
                     )}
                   >
                     {/* Show custom model name when a custom API connection is active */}
-                    {getModelShortName(customModel || currentModel)}
+                    {customModel
+                      ? (IDEA_MODELS.find(m => m.id === customModel)?.name || getModelShortName(customModel))
+                      : getModelShortName(currentModel)}
                     {/* Show chevron for Anthropic models or IDEA provider (selectable) */}
                     {(!customModel || anthropicBaseUrl === IDEA_BASE_URL) && <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />}
                   </button>
