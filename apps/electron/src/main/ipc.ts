@@ -1063,7 +1063,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
           'androidstudio': ['open', '-a', 'Android Studio', safePath],
           'warp': ['open', '-a', 'Warp', safePath],
           'fork': ['open', '-a', 'Fork', safePath],
-          'xcode': ['open', '-a', 'open -a BitSkyXcode-16.0.app .', safePath],
+          'xcode': ['open', '-a', 'BitSkyXcode-16.0.app', safePath],
           'antigravity': ['open', '-a', 'Antigravity', safePath],
           'sublime-merge': ['open', '-a', 'Sublime Merge', safePath],
         }
