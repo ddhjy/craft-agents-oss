@@ -619,7 +619,7 @@ export function EditPopover({
     // The &badges= passes badge metadata for hiding the XML context in UI
     // The &workdir= sets the working directory (user_default, none, or absolute path)
     const workdirParam = workingDirectory ? `&workdir=${encodeURIComponent(workingDirectory)}` : ''
-    const url = `craftagents://action/new-chat?window=focused&input=${encodedInput}&send=true&mode=${permissionMode}&badges=${encodedBadges}${workdirParam}`
+    const url = `bunnyagents://action/new-chat?window=focused&input=${encodedInput}&send=true&mode=${permissionMode}&badges=${encodedBadges}${workdirParam}`
 
     try {
       await window.electronAPI.openUrl(url)

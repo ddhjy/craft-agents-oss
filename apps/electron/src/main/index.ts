@@ -92,9 +92,9 @@ if (isDebugMode) {
   setPerfEnabled(true)
 }
 
-// Custom URL scheme for deeplinks (e.g., craftagents://auth-complete)
-// Supports multi-instance dev: CRAFT_DEEPLINK_SCHEME env var (craftagents1, craftagents2, etc.)
-const DEEPLINK_SCHEME = process.env.CRAFT_DEEPLINK_SCHEME || 'craftagents'
+// Custom URL scheme for deeplinks (e.g., bunnyagents://auth-complete)
+// Supports multi-instance dev: CRAFT_DEEPLINK_SCHEME env var (bunnyagents1, bunnyagents2, etc.)
+const DEEPLINK_SCHEME = process.env.CRAFT_DEEPLINK_SCHEME || 'bunnyagents'
 
 let windowManager: WindowManager | null = null
 let sessionManager: SessionManager | null = null
@@ -106,7 +106,7 @@ let pendingDeepLink: string | null = null
 // Supports multi-instance dev: CRAFT_APP_NAME env var (e.g., "Craft Agents [1]")
 app.setName(process.env.CRAFT_APP_NAME || 'Bunny')
 
-// Register as default protocol client for craftagents:// URLs
+// Register as default protocol client for bunnyagents:// URLs
 // This must be done before app.whenReady() on some platforms
 if (process.defaultApp) {
   // Development mode: need to pass the app path

@@ -1,20 +1,20 @@
 /**
  * Deep Link Handler
  *
- * Parses craftagents:// URLs and routes to appropriate actions.
+ * Parses bunnyagents:// URLs and routes to appropriate actions.
  *
  * URL Formats (workspace is optional - uses active window if omitted):
  *
  * Compound format (hierarchical navigation):
- *   craftagents://allChats[/chat/{sessionId}]            - Chat list (all chats)
- *   craftagents://flagged[/chat/{sessionId}]             - Chat list (flagged filter)
- *   craftagents://state/{stateId}[/chat/{sessionId}]     - Chat list (state filter)
- *   craftagents://sources[/source/{sourceSlug}]          - Sources list
- *   craftagents://settings[/{subpage}]                   - Settings (general, shortcuts, preferences)
+ *   bunnyagents://allChats[/chat/{sessionId}]            - Chat list (all chats)
+ *   bunnyagents://flagged[/chat/{sessionId}]             - Chat list (flagged filter)
+ *   bunnyagents://state/{stateId}[/chat/{sessionId}]     - Chat list (state filter)
+ *   bunnyagents://sources[/source/{sourceSlug}]          - Sources list
+ *   bunnyagents://settings[/{subpage}]                   - Settings (general, shortcuts, preferences)
  *
  * Action format:
- *   craftagents://action/{actionName}[/{id}][?params]
- *   craftagents://workspace/{workspaceId}/action/{actionName}[?params]
+ *   bunnyagents://action/{actionName}[/{id}][?params]
+ *   bunnyagents://workspace/{workspaceId}/action/{actionName}[?params]
  *
  * Actions:
  *   new-chat                  - Create new chat, optional ?input=text&name=name&send=true
@@ -25,13 +25,13 @@
  *   unflag-session/{id}       - Unflag session
  *
  * Examples:
- *   craftagents://allChats                               (all chats view)
- *   craftagents://allChats/chat/abc123                   (specific chat)
- *   craftagents://settings/shortcuts                     (shortcuts page)
- *   craftagents://sources/source/github                  (github source info)
- *   craftagents://action/new-chat                        (uses active window)
- *   craftagents://action/resume-sdk-session/{sdkId}      (resume Claude Code session)
- *   craftagents://workspace/ws123/allChats/chat/abc123   (targets specific workspace)
+ *   bunnyagents://allChats                               (all chats view)
+ *   bunnyagents://allChats/chat/abc123                   (specific chat)
+ *   bunnyagents://settings/shortcuts                     (shortcuts page)
+ *   bunnyagents://sources/source/github                  (github source info)
+ *   bunnyagents://action/new-chat                        (uses active window)
+ *   bunnyagents://action/resume-sdk-session/{sdkId}      (resume Claude Code session)
+ *   bunnyagents://workspace/ws123/allChats/chat/abc123   (targets specific workspace)
  */
 
 import type { BrowserWindow } from 'electron'
