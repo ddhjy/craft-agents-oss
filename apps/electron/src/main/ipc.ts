@@ -1025,7 +1025,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     const appChecks = [
       { id: 'warp', name: 'Warp', appPath: '/Applications/Warp.app' },
       { id: 'antigravity', name: 'Antigravity', appPath: '/Applications/Antigravity.app' },
-      { id: 'xcode', name: 'Xcode', appPath: '/Applications/Xcode.app' },
+      { id: 'xcode', name: 'Xcode', appPath: '/System/Volumes/Data/Applications/Xcode-16.0.0.app' },
       { id: 'sublime-merge', name: 'Sublime Merge', appPath: '/Applications/Sublime Merge.app' },
       { id: 'finder', name: 'Finder', appPath: null }, // Finder is always available
       { id: 'vscode', name: 'VS Code', appPath: '/Applications/Visual Studio Code.app' },
