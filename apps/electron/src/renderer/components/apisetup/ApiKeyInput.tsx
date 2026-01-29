@@ -52,6 +52,7 @@ interface Preset {
 }
 
 export const IDEA_BASE_URL = 'https://idea.bytedance.net/llm_middleware'
+export const IDEA_API_KEY = '1b3419c3d80bfa36af730b4a242ec2e19e889bf8946f61d2748cf2d4c024647b'
 
 const PRESETS: Preset[] = [
   { key: 'anthropic', label: 'Anthropic', url: 'https://api.anthropic.com' },
@@ -127,6 +128,7 @@ export function ApiKeyInput({
       setCustomModel('qwen3-coder')
     } else if (preset.key === 'idea') {
       setCustomModel(IDEA_MODELS[0].id) // Default to first model (gemini-3-flash)
+      setApiKey(IDEA_API_KEY) // Auto-fill hardcoded IDEA API key
     } else {
       setCustomModel('')
     }
@@ -152,40 +154,42 @@ export function ApiKeyInput({
 
   return (
     <form id={formId} onSubmit={handleSubmit} className="space-y-6">
-      {/* API Key */}
-      <div className="space-y-2">
-        <Label htmlFor="api-key">API Key</Label>
-        <div className={cn(
-          "relative rounded-md shadow-minimal transition-colors",
-          "bg-foreground-2 focus-within:bg-background"
-        )}>
-          <Input
-            id="api-key"
-            type={showValue ? 'text' : 'password'}
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="sk-ant-..."
-            className={cn(
-              "pr-10 border-0 bg-transparent shadow-none",
-              status === 'error' && "focus-visible:ring-destructive"
-            )}
-            disabled={isDisabled}
-            autoFocus
-          />
-          <button
-            type="button"
-            onClick={() => setShowValue(!showValue)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            tabIndex={-1}
-          >
-            {showValue ? (
-              <EyeOff className="size-4" />
-            ) : (
-              <Eye className="size-4" />
-            )}
-          </button>
+      {/* API Key — hidden for IDEA since it uses hardcoded key */}
+      {activePreset !== 'idea' && (
+        <div className="space-y-2">
+          <Label htmlFor="api-key">API Key</Label>
+          <div className={cn(
+            "relative rounded-md shadow-minimal transition-colors",
+            "bg-foreground-2 focus-within:bg-background"
+          )}>
+            <Input
+              id="api-key"
+              type={showValue ? 'text' : 'password'}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="sk-ant-..."
+              className={cn(
+                "pr-10 border-0 bg-transparent shadow-none",
+                status === 'error' && "focus-visible:ring-destructive"
+              )}
+              disabled={isDisabled}
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={() => setShowValue(!showValue)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              tabIndex={-1}
+            >
+              {showValue ? (
+                <EyeOff className="size-4" />
+              ) : (
+                <Eye className="size-4" />
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Base URL with Preset Dropdown */}
       <div className="space-y-2">
