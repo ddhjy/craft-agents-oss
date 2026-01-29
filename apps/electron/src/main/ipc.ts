@@ -1023,25 +1023,14 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     // macOS: Check for common development apps by checking /Applications directly
     const apps: AvailableApp[] = []
     const appChecks = [
-      { id: 'finder', name: 'Finder', appPath: null }, // Finder is always available
-      { id: 'cursor', name: 'Cursor', appPath: '/Applications/Cursor.app' },
-      { id: 'vscode', name: 'VS Code', appPath: '/Applications/Visual Studio Code.app' },
-      { id: 'zed', name: 'Zed', appPath: '/Applications/Zed.app' },
-      { id: 'sublime', name: 'Sublime Text', appPath: '/Applications/Sublime Text.app' },
-      { id: 'pycharm', name: 'PyCharm', appPath: '/Applications/PyCharm.app' },
-      { id: 'androidstudio', name: 'Android Studio', appPath: '/Applications/Android Studio.app' },
-      { id: 'webstorm', name: 'WebStorm', appPath: '/Applications/WebStorm.app' },
-      { id: 'ghostty', name: 'Ghostty', appPath: '/Applications/Ghostty.app' },
-      { id: 'iterm', name: 'iTerm', appPath: '/Applications/iTerm.app' },
       { id: 'warp', name: 'Warp', appPath: '/Applications/Warp.app' },
-      { id: 'terminal', name: 'Terminal', appPath: '/System/Applications/Utilities/Terminal.app' },
-      { id: 'github-desktop', name: 'GitHub Desktop', appPath: '/Applications/GitHub Desktop.app' },
-      { id: 'sourcetree', name: 'Sourcetree', appPath: '/Applications/Sourcetree.app' },
-      { id: 'fork', name: 'Fork', appPath: '/Applications/Fork.app' },
-      { id: 'goland', name: 'GoLand', appPath: '/Applications/GoLand.app' },
-      { id: 'xcode', name: 'Xcode', appPath: '/Applications/Xcode.app' },
       { id: 'antigravity', name: 'Antigravity', appPath: '/Applications/Antigravity.app' },
+      { id: 'xcode', name: 'Xcode', appPath: '/Applications/Xcode.app' },
       { id: 'sublime-merge', name: 'Sublime Merge', appPath: '/Applications/Sublime Merge.app' },
+      { id: 'finder', name: 'Finder', appPath: null }, // Finder is always available
+      { id: 'vscode', name: 'VS Code', appPath: '/Applications/Visual Studio Code.app' },
+      { id: 'androidstudio', name: 'Android Studio', appPath: '/Applications/Android Studio.app' },
+      { id: 'fork', name: 'Fork', appPath: '/Applications/Fork.app' },
     ]
 
     let shortcutNum = 1
@@ -1070,21 +1059,10 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
         // macOS: Use 'open' command with -a flag for specific apps
         const appCommands: Record<string, string[]> = {
           'finder': ['open', safePath],
-          'cursor': ['open', '-a', 'Cursor', safePath],
           'vscode': ['open', '-a', 'Visual Studio Code', safePath],
-          'zed': ['open', '-a', 'Zed', safePath],
-          'sublime': ['open', '-a', 'Sublime Text', safePath],
-          'pycharm': ['open', '-a', 'PyCharm', safePath],
           'androidstudio': ['open', '-a', 'Android Studio', safePath],
-          'webstorm': ['open', '-a', 'WebStorm', safePath],
-          'ghostty': ['open', '-a', 'Ghostty', safePath],
-          'iterm': ['open', '-a', 'iTerm', safePath],
           'warp': ['open', '-a', 'Warp', safePath],
-          'terminal': ['open', '-a', 'Terminal', safePath],
-          'github-desktop': ['open', '-a', 'GitHub Desktop', safePath],
-          'sourcetree': ['open', '-a', 'Sourcetree', safePath],
           'fork': ['open', '-a', 'Fork', safePath],
-          'goland': ['open', '-a', 'GoLand', safePath],
           'xcode': ['open', '-a', 'Xcode', safePath],
           'antigravity': ['open', '-a', 'Antigravity', safePath],
           'sublime-merge': ['open', '-a', 'Sublime Merge', safePath],
