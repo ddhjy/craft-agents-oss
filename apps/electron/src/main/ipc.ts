@@ -489,7 +489,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       try {
         const thumbnail = await nativeImage.createThumbnailFromPath(safePath, { width: 200, height: 200 })
         if (!thumbnail.isEmpty()) {
-          ;(attachment as { thumbnailBase64?: string }).thumbnailBase64 = thumbnail.toPNG().toString('base64')
+          ; (attachment as { thumbnailBase64?: string }).thumbnailBase64 = thumbnail.toPNG().toString('base64')
         }
       } catch (thumbError) {
         // Thumbnail generation failed - this is ok, we'll show an icon fallback
@@ -520,7 +520,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       const thumbnail = await nativeImage.createThumbnailFromPath(tempPath, { width: 200, height: 200 })
 
       // Clean up temp file
-      await unlink(tempPath).catch(() => {})
+      await unlink(tempPath).catch(() => { })
 
       if (!thumbnail.isEmpty()) {
         return thumbnail.toPNG().toString('base64')
@@ -528,7 +528,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       return null
     } catch (error) {
       // Clean up temp file on error
-      await unlink(tempPath).catch(() => {})
+      await unlink(tempPath).catch(() => { })
       ipcLog.info('generateThumbnail failed:', error instanceof Error ? error.message : error)
       return null
     }
@@ -705,7 +705,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       // Clean up any files we've written before the error
       if (filesToCleanup.length > 0) {
         ipcLog.info(`Cleaning up ${filesToCleanup.length} orphaned file(s) after storage error`)
-        await Promise.all(filesToCleanup.map(f => unlink(f).catch(() => {})))
+        await Promise.all(filesToCleanup.map(f => unlink(f).catch(() => { })))
       }
 
       const message = error instanceof Error ? error.message : 'Unknown error'
@@ -1039,6 +1039,9 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       { id: 'sourcetree', name: 'Sourcetree', appPath: '/Applications/Sourcetree.app' },
       { id: 'fork', name: 'Fork', appPath: '/Applications/Fork.app' },
       { id: 'goland', name: 'GoLand', appPath: '/Applications/GoLand.app' },
+      { id: 'xcode', name: 'Xcode', appPath: '/Applications/Xcode.app' },
+      { id: 'antigravity', name: 'Antigravity', appPath: '/Applications/Antigravity.app' },
+      { id: 'sublime-merge', name: 'Sublime Merge', appPath: '/Applications/Sublime Merge.app' },
     ]
 
     let shortcutNum = 1
@@ -1082,6 +1085,9 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
           'sourcetree': ['open', '-a', 'Sourcetree', safePath],
           'fork': ['open', '-a', 'Fork', safePath],
           'goland': ['open', '-a', 'GoLand', safePath],
+          'xcode': ['open', '-a', 'Xcode', safePath],
+          'antigravity': ['open', '-a', 'Antigravity', safePath],
+          'sublime-merge': ['open', '-a', 'Sublime Merge', safePath],
         }
 
         const cmd = appCommands[appId]
@@ -1576,7 +1582,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     } else {
       // Update the setting in defaults
       config.defaults = config.defaults || {}
-      ;(config.defaults as Record<string, unknown>)[key] = value
+        ; (config.defaults as Record<string, unknown>)[key] = value
     }
 
     // Save the config
@@ -2411,9 +2417,9 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     // Broadcast to all windows except the sender
     for (const managed of windowManager.getAllWindows()) {
       if (!managed.window.isDestroyed() &&
-          !managed.window.webContents.isDestroyed() &&
-          managed.window.webContents.mainFrame &&
-          managed.window.webContents.id !== senderId) {
+        !managed.window.webContents.isDestroyed() &&
+        managed.window.webContents.mainFrame &&
+        managed.window.webContents.id !== senderId) {
         managed.window.webContents.send(IPC_CHANNELS.THEME_PREFERENCES_CHANGED, preferences)
       }
     }
