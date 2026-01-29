@@ -58,6 +58,8 @@ export interface AppShellContextType {
   enabledModes?: PermissionMode[]
   /** Dynamic todo states from workspace config (provided by AppShell, defaults to empty) */
   todoStates?: TodoStateConfig[]
+  /** Whether the session status feature is enabled (hides status UI when false) */
+  statusEnabled?: boolean
 
   // Unified session options (replaces ultrathinkSessions and sessionModes)
   /** All session-scoped options in one map. Use useSessionOptionsFor() hook for easy access. */

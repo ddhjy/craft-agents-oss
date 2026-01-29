@@ -199,6 +199,8 @@ interface SessionItemProps {
   labels: LabelConfig[]
   /** Callback when session labels are toggled */
   onLabelsChange?: (sessionId: string, labels: string[]) => void
+  /** Whether the session status feature is enabled (hides status icon when false) */
+  statusEnabled?: boolean
 }
 
 /**
@@ -227,6 +229,7 @@ function SessionItem({
   flatLabels,
   labels,
   onLabelsChange,
+  statusEnabled = true,
 }: SessionItemProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [contextMenuOpen, setContextMenuOpen] = useState(false)
@@ -280,7 +283,8 @@ function SessionItem({
       <ContextMenu modal={true} onOpenChange={setContextMenuOpen}>
         <ContextMenuTrigger asChild>
           <div className="session-content relative group select-none pl-2 mr-2">
-        {/* Todo State Icon - positioned absolutely, outside the button */}
+        {/* Todo State Icon - positioned absolutely, outside the button (only when statusEnabled) */}
+        {statusEnabled && (
         <Popover modal={true} open={todoMenuOpen} onOpenChange={setTodoMenuOpen}>
           <PopoverTrigger asChild>
             <div className="absolute left-4 top-3.5 z-10">
@@ -322,6 +326,7 @@ function SessionItem({
             />
           </PopoverContent>
         </Popover>
+        )}
         {/* Main content button */}
         <button
           {...itemProps}
@@ -339,8 +344,8 @@ function SessionItem({
             onKeyDown(e, item)
           }}
         >
-          {/* Spacer for todo icon */}
-          <div className="w-4 h-5 shrink-0" />
+          {/* Spacer for todo icon (only when statusEnabled) */}
+          {statusEnabled && <div className="w-4 h-5 shrink-0" />}
           {/* Content column */}
           <div className="flex flex-col gap-1.5 min-w-0 flex-1">
             {/* Title - up to 2 lines, with shimmer during async operations (sharing, title regen, etc.) */}
@@ -650,6 +655,8 @@ interface SessionListProps {
   labels?: LabelConfig[]
   /** Callback when session labels are toggled (for labels submenu in SessionMenu) */
   onLabelsChange?: (sessionId: string, labels: string[]) => void
+  /** Whether the session status feature is enabled (hides status icons when false) */
+  statusEnabled?: boolean
 }
 
 // Re-export TodoStateId for use by parent components
@@ -686,6 +693,7 @@ export function SessionList({
   evaluateViews,
   labels = [],
   onLabelsChange,
+  statusEnabled = true,
 }: SessionListProps) {
   const [session] = useSession()
   const { navigate } = useNavigation()
@@ -1050,6 +1058,7 @@ export function SessionList({
                     flatLabels={flatLabels}
                     labels={labels}
                     onLabelsChange={onLabelsChange}
+                    statusEnabled={statusEnabled}
                   />
                 )
               })}
