@@ -110,7 +110,7 @@ export function ActiveOptionBadges({
 }: ActiveOptionBadgesProps) {
   // Get statusEnabled from context if not provided as prop
   const appShellCtx = useOptionalAppShellContext()
-  const statusEnabled = statusEnabledProp ?? appShellCtx?.statusEnabled ?? true
+  const statusEnabled = statusEnabledProp ?? appShellCtx?.statusEnabled ?? false
 
   // Resolve session label entries to their config objects + parsed values.
   // Entries may be bare IDs ("bug") or valued ("priority::3").

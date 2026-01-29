@@ -1018,7 +1018,7 @@ export interface WorkspaceSettings {
   workingDirectory?: string
   /** Whether local (stdio) MCP servers are enabled */
   localMcpEnabled?: boolean
-  /** Whether the session status feature is enabled. Defaults to true. */
+  /** Whether the session status feature is enabled. Defaults to false. */
   statusEnabled?: boolean
 }
 

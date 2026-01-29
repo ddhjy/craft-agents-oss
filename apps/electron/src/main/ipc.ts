@@ -1450,7 +1450,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       thinkingLevel: config?.defaults?.thinkingLevel,
       workingDirectory: config?.defaults?.workingDirectory,
       localMcpEnabled: config?.localMcpServers?.enabled ?? true,
-      statusEnabled: config?.statusEnabled ?? true,
+      statusEnabled: config?.statusEnabled ?? false,
     }
   })
 

@@ -229,7 +229,7 @@ function SessionItem({
   flatLabels,
   labels,
   onLabelsChange,
-  statusEnabled = true,
+  statusEnabled = false,
 }: SessionItemProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [contextMenuOpen, setContextMenuOpen] = useState(false)
@@ -693,7 +693,7 @@ export function SessionList({
   evaluateViews,
   labels = [],
   onLabelsChange,
-  statusEnabled = true,
+  statusEnabled = false,
 }: SessionListProps) {
   const [session] = useSession()
   const { navigate } = useNavigation()

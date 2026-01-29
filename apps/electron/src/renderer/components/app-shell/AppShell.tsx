@@ -722,7 +722,7 @@ function AppShellContent({
   const [enabledModes, setEnabledModes] = React.useState<PermissionMode[]>(['safe', 'ask', 'allow-all'])
 
   // Whether session status feature is enabled (shows Status section in sidebar)
-  const [statusEnabled, setStatusEnabled] = React.useState(true)
+  const [statusEnabled, setStatusEnabled] = React.useState(false)
 
   // Load workspace settings (for localMcpEnabled, cyclablePermissionModes, statusEnabled) on workspace change
   React.useEffect(() => {
@@ -730,7 +730,7 @@ function AppShellContent({
     window.electronAPI.getWorkspaceSettings(activeWorkspaceId).then((settings) => {
       if (settings) {
         setLocalMcpEnabled(settings.localMcpEnabled ?? true)
-        setStatusEnabled(settings.statusEnabled ?? true)
+        setStatusEnabled(settings.statusEnabled ?? false)
         // Load cyclablePermissionModes from workspace settings
         if (settings.cyclablePermissionModes && settings.cyclablePermissionModes.length >= 2) {
           setEnabledModes(settings.cyclablePermissionModes)
