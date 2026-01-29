@@ -54,6 +54,7 @@ import { PATH_SEP, getPathBasename } from '@/lib/platform'
 import { applySmartTypography } from '@/lib/smart-typography'
 import { AttachmentPreview } from '../AttachmentPreview'
 import { MODELS, getModelShortName, getModelContextWindow, isClaudeModel } from '@config/models'
+import { IDEA_MODELS, IDEA_BASE_URL } from '@/components/apisetup/ApiKeyInput'
 import { useOptionalAppShellContext } from '@/context/AppShellContext'
 import { EditPopover, getEditConfig } from '@/components/ui/EditPopover'
 import { SourceAvatar } from '@/components/ui/source-avatar'
@@ -234,6 +235,8 @@ export function FreeFormInput({
   // Uses optional variant so playground (no provider) doesn't crash.
   const appShellCtx = useOptionalAppShellContext()
   const customModel = appShellCtx?.customModel ?? null
+  const anthropicBaseUrl = appShellCtx?.anthropicBaseUrl ?? null
+  const onCustomModelChange = appShellCtx?.onCustomModelChange
   // Access todoStates and onTodoStateChange from context for the # menu state picker
   const todoStates = appShellCtx?.todoStates ?? []
   const onTodoStateChange = appShellCtx?.onTodoStateChange
@@ -1424,15 +1427,36 @@ export function FreeFormInput({
                   >
                     {/* Show custom model name when a custom API connection is active */}
                     {getModelShortName(customModel || currentModel)}
-                    {!customModel && <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />}
+                    {/* Show chevron for Anthropic models or IDEA provider (selectable) */}
+                    {(!customModel || anthropicBaseUrl === IDEA_BASE_URL) && <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />}
                   </button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
               <TooltipContent side="top">Model</TooltipContent>
             </Tooltip>
-            <StyledDropdownMenuContent side="top" align="end" sideOffset={8} className="min-w-[240px]">
-              {/* When custom model is active, show it as a static item instead of Anthropic options */}
-              {customModel ? (
+            <StyledDropdownMenuContent side="top" align="end" sideOffset={8} className="min-w-[240px] max-h-[400px] overflow-y-auto">
+              {/* IDEA provider: show selectable model list */}
+              {anthropicBaseUrl === IDEA_BASE_URL && customModel ? (
+                IDEA_MODELS.map((model) => {
+                  const isSelected = customModel === model.id
+                  return (
+                    <StyledDropdownMenuItem
+                      key={model.id}
+                      onSelect={() => onCustomModelChange?.(model.id)}
+                      className="flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer"
+                    >
+                      <div className="text-left">
+                        <div className="font-medium text-sm">{model.name}</div>
+                        <div className="text-xs text-muted-foreground">{model.description}</div>
+                      </div>
+                      {isSelected && (
+                        <Check className="h-4 w-4 text-foreground shrink-0 ml-3" />
+                      )}
+                    </StyledDropdownMenuItem>
+                  )
+                })
+              ) : customModel ? (
+                /* Other custom providers: show static item */
                 <StyledDropdownMenuItem
                   disabled
                   className="flex items-center justify-between px-2 py-2 rounded-lg"

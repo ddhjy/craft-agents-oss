@@ -38,6 +38,10 @@ export interface AppShellContextType {
   currentModel: string
   /** When set, a custom model overrides the Anthropic model selector (e.g. OpenRouter) */
   customModel: string | null
+  /** Custom API base URL (for detecting provider type like IDEA) */
+  anthropicBaseUrl: string | null
+  /** Callback to update custom model (for IDEA model switching) */
+  onCustomModelChange?: (model: string) => void
   pendingPermissions: Map<string, PermissionRequest[]>
   pendingCredentials: Map<string, CredentialRequest[]>
   /** Get draft input text for a session - reads from ref without triggering re-renders */
