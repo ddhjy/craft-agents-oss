@@ -1406,6 +1406,11 @@ export function FreeFormInput({
               isEmptySession={isEmptySession}
             />
           )}
+
+          {/* 4. Open In Button - opens working directory in various apps */}
+          {workingDirectory && (
+            <OpenInButton workingDirectory={workingDirectory} />
+          )}
           </div>
 
           {/* Spacer */}
@@ -1667,6 +1672,100 @@ function formatPathForDisplay(path: string, homeDir: string): string {
       : (relativePath || PATH_SEP)
   }
   return `in ${displayPath}`
+}
+
+/**
+ * OpenInButton - Dropdown button to open working directory in various apps
+ */
+function OpenInButton({ workingDirectory }: { workingDirectory?: string }) {
+  const [isOpen, setIsOpen] = React.useState(false)
+  const [availableApps, setAvailableApps] = React.useState<import('../../../../shared/types').AvailableApp[]>([])
+
+  // Fetch available apps when dropdown opens
+  React.useEffect(() => {
+    if (isOpen && workingDirectory) {
+      window.electronAPI?.getAvailableApps?.(workingDirectory).then(apps => {
+        setAvailableApps(apps || [])
+      })
+    }
+  }, [isOpen, workingDirectory])
+
+  const handleOpenWith = React.useCallback((appId: string) => {
+    if (workingDirectory) {
+      window.electronAPI?.openWithApp?.(workingDirectory, appId)
+      setIsOpen(false)
+    }
+  }, [workingDirectory])
+
+  // Handle keyboard shortcuts (1-9 for quick selection)
+  React.useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const key = e.key
+      if (key >= '1' && key <= '9') {
+        const index = parseInt(key) - 1
+        if (index < availableApps.length) {
+          e.preventDefault()
+          handleOpenWith(availableApps[index].id)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, availableApps, handleOpenWith])
+
+  if (!workingDirectory) return null
+
+  return (
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                "inline-flex items-center h-7 px-2 gap-1 text-[13px] shrink-0 rounded-[6px] hover:bg-foreground/5 transition-colors select-none",
+                isOpen && "bg-foreground/5"
+              )}
+            >
+              Open
+              <ChevronDown className="h-3 w-3 opacity-50" />
+            </button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="top">Open folder in app</TooltipContent>
+      </Tooltip>
+      <StyledDropdownMenuContent side="top" align="start" sideOffset={8} className="min-w-[200px]">
+        {availableApps.map((app, index) => (
+          <StyledDropdownMenuItem
+            key={app.id}
+            onClick={() => handleOpenWith(app.id)}
+          >
+            <span className="w-5 text-muted-foreground text-[12px] tabular-nums">{index + 1}</span>
+            <span className="flex-1">{app.name}</span>
+          </StyledDropdownMenuItem>
+        ))}
+        {availableApps.length === 0 && (
+          <div className="px-3 py-2 text-sm text-muted-foreground">Loading...</div>
+        )}
+        <StyledDropdownMenuSeparator />
+        <StyledDropdownMenuItem
+          onClick={() => {
+            if (workingDirectory) {
+              navigator.clipboard.writeText(workingDirectory)
+              setIsOpen(false)
+            }
+          }}
+        >
+          <span className="w-5" />
+          <span className="flex-1">Copy path</span>
+          <span className="text-muted-foreground text-[12px]">⌘⇧C</span>
+        </StyledDropdownMenuItem>
+      </StyledDropdownMenuContent>
+    </DropdownMenu>
+  )
 }
 
 /**

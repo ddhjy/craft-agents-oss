@@ -4,12 +4,12 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { normalize, isAbsolute, join, basename, dirname, resolve, relative, sep } from 'path'
 import { homedir, tmpdir } from 'os'
 import { randomUUID } from 'crypto'
-import { execSync } from 'child_process'
+import { execSync, spawn } from 'child_process'
 import { SessionManager } from './sessions'
 import { ipcLog, windowLog } from './logger'
 import { WindowManager } from './window-manager'
 import { registerOnboardingHandlers } from './onboarding'
-import { IPC_CHANNELS, type FileAttachment, type StoredAttachment, type AuthType, type ApiSetupInfo, type SendMessageOptions } from '../shared/types'
+import { IPC_CHANNELS, type FileAttachment, type StoredAttachment, type AuthType, type ApiSetupInfo, type SendMessageOptions, type AvailableApp } from '../shared/types'
 import { readFileAttachment, perf, validateImageForClaudeAPI, IMAGE_LIMITS } from '@craft-agent/shared/utils'
 import { getAuthType, setAuthType, getPreferencesPath, getCustomModel, setCustomModel, getModel, setModel, getSessionDraft, setSessionDraft, deleteSessionDraft, getAllSessionDrafts, getWorkspaceByNameOrId, addWorkspace, setActiveWorkspace, getAnthropicBaseUrl, setAnthropicBaseUrl, loadStoredConfig, saveConfig, type Workspace, SUMMARIZATION_MODEL } from '@craft-agent/shared/config'
 import { getSessionAttachmentsPath } from '@craft-agent/shared/sessions'
@@ -1007,6 +1007,103 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       const message = error instanceof Error ? error.message : 'Unknown error'
       ipcLog.error('showInFolder error:', message)
       throw new Error(`Failed to show in folder: ${message}`)
+    }
+  })
+
+  // Get available apps for "Open in" functionality (macOS only for now)
+  ipcMain.handle(IPC_CHANNELS.GET_AVAILABLE_APPS, async (_event, _path: string): Promise<AvailableApp[]> => {
+    if (process.platform !== 'darwin') {
+      // Return basic apps for non-macOS platforms
+      return [
+        { id: 'finder', name: 'File Explorer', shortcut: '1' },
+        { id: 'terminal', name: 'Terminal', shortcut: '2' },
+      ]
+    }
+
+    // macOS: Check for common development apps
+    const apps: AvailableApp[] = []
+    const appChecks = [
+      { id: 'finder', name: 'Finder', bundleId: 'com.apple.finder' },
+      { id: 'cursor', name: 'Cursor', bundleId: 'com.todesktop.230313mzl4w4u92' },
+      { id: 'vscode', name: 'VS Code', bundleId: 'com.microsoft.VSCode' },
+      { id: 'zed', name: 'Zed', bundleId: 'dev.zed.Zed' },
+      { id: 'sublime', name: 'Sublime Text', bundleId: 'com.sublimetext.4' },
+      { id: 'pycharm', name: 'PyCharm', bundleId: 'com.jetbrains.pycharm' },
+      { id: 'androidstudio', name: 'Android Studio', bundleId: 'com.google.android.studio' },
+      { id: 'webstorm', name: 'WebStorm', bundleId: 'com.jetbrains.WebStorm' },
+      { id: 'ghostty', name: 'Ghostty', bundleId: 'com.mitchellh.ghostty' },
+      { id: 'iterm', name: 'iTerm', bundleId: 'com.googlecode.iterm2' },
+      { id: 'warp', name: 'Warp', bundleId: 'dev.warp.Warp-Stable' },
+      { id: 'terminal', name: 'Terminal', bundleId: 'com.apple.Terminal' },
+      { id: 'github-desktop', name: 'GitHub Desktop', bundleId: 'com.github.GitHubClient' },
+      { id: 'sourcetree', name: 'Sourcetree', bundleId: 'com.torusknot.SourceTreeNotMAS' },
+      { id: 'fork', name: 'Fork', bundleId: 'com.DanPristupov.Fork' },
+      { id: 'goland', name: 'GoLand', bundleId: 'com.jetbrains.goland' },
+    ]
+
+    let shortcutNum = 1
+    for (const appDef of appChecks) {
+      try {
+        // Check if app exists using mdfind (faster than checking /Applications directly)
+        const result = execSync(`mdfind "kMDItemCFBundleIdentifier == '${appDef.bundleId}'" 2>/dev/null`, { encoding: 'utf8', timeout: 1000 })
+        if (result.trim()) {
+          apps.push({
+            id: appDef.id,
+            name: appDef.name,
+            shortcut: shortcutNum <= 9 ? `${shortcutNum}` : undefined,
+          })
+          shortcutNum++
+        }
+      } catch {
+        // App not found or mdfind failed, skip
+      }
+    }
+
+    return apps
+  })
+
+  // Open path with specific app
+  ipcMain.handle(IPC_CHANNELS.OPEN_WITH_APP, async (_event, path: string, appId: string) => {
+    try {
+      const absolutePath = resolve(path)
+      const safePath = await validateFilePath(absolutePath)
+
+      if (process.platform === 'darwin') {
+        // macOS: Use 'open' command with -a flag for specific apps
+        const appCommands: Record<string, string[]> = {
+          'finder': ['open', safePath],
+          'cursor': ['open', '-a', 'Cursor', safePath],
+          'vscode': ['open', '-a', 'Visual Studio Code', safePath],
+          'zed': ['open', '-a', 'Zed', safePath],
+          'sublime': ['open', '-a', 'Sublime Text', safePath],
+          'pycharm': ['open', '-a', 'PyCharm', safePath],
+          'androidstudio': ['open', '-a', 'Android Studio', safePath],
+          'webstorm': ['open', '-a', 'WebStorm', safePath],
+          'ghostty': ['open', '-a', 'Ghostty', safePath],
+          'iterm': ['open', '-a', 'iTerm', safePath],
+          'warp': ['open', '-a', 'Warp', safePath],
+          'terminal': ['open', '-a', 'Terminal', safePath],
+          'github-desktop': ['open', '-a', 'GitHub Desktop', safePath],
+          'sourcetree': ['open', '-a', 'Sourcetree', safePath],
+          'fork': ['open', '-a', 'Fork', safePath],
+          'goland': ['open', '-a', 'GoLand', safePath],
+        }
+
+        const cmd = appCommands[appId]
+        if (!cmd) {
+          throw new Error(`Unknown app: ${appId}`)
+        }
+
+        const [command, ...args] = cmd
+        spawn(command, args, { detached: true, stdio: 'ignore' }).unref()
+      } else {
+        // Non-macOS: Just open with default app
+        await shell.openPath(safePath)
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      ipcLog.error('openWithApp error:', message)
+      throw new Error(`Failed to open with app: ${message}`)
     }
   })
 

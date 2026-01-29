@@ -84,6 +84,16 @@ export interface FileSearchResult {
   relativePath: string  // Path relative to search base
 }
 
+/**
+ * Available app for "Open in" functionality
+ */
+export interface AvailableApp {
+  id: string          // Unique identifier (e.g., 'finder', 'vscode', 'cursor')
+  name: string        // Display name (e.g., 'Finder', 'VS Code', 'Cursor')
+  icon?: string       // Base64 encoded icon or app bundle identifier
+  shortcut?: string   // Keyboard shortcut hint (e.g., '⌘1')
+}
+
 // Import auth request types for unified auth flow
 import type { AuthRequest as SharedAuthRequest, CredentialInputMode as SharedCredentialInputMode, CredentialAuthRequest as SharedCredentialAuthRequest } from '@craft-agent/shared/agent';
 export type { SharedAuthRequest as AuthRequest };
@@ -547,6 +557,8 @@ export const IPC_CHANNELS = {
   OPEN_URL: 'shell:openUrl',
   OPEN_FILE: 'shell:openFile',
   SHOW_IN_FOLDER: 'shell:showInFolder',
+  OPEN_WITH_APP: 'shell:openWithApp',
+  GET_AVAILABLE_APPS: 'shell:getAvailableApps',
 
   // Menu actions (main → renderer)
   MENU_NEW_CHAT: 'menu:newChat',
@@ -790,6 +802,8 @@ export interface ElectronAPI {
   openUrl(url: string): Promise<void>
   openFile(path: string): Promise<void>
   showInFolder(path: string): Promise<void>
+  openWithApp(path: string, appId: string): Promise<void>
+  getAvailableApps(path: string): Promise<AvailableApp[]>
 
   // Menu event listeners
   onMenuNewChat(callback: () => void): () => void
