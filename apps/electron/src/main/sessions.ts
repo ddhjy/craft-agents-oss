@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import * as Sentry from '@sentry/electron/main'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { join, dirname } from 'path'
+import { existsSync, statSync } from 'fs'
 import { rm, readFile } from 'fs/promises'
 import { CraftAgent, type AgentEvent, setPermissionMode, type PermissionMode, unregisterSessionScopedToolCallbacks, AbortReason, type AuthRequest, type AuthResult, type CredentialAuthRequest } from '@craft-agent/shared/agent'
 import { sessionLog, isDebugMode, getLogFilePath } from './logger'
@@ -63,6 +63,52 @@ function sanitizeForTitle(content: string): string {
     .replace(/<[^>]+>/g, '')     // Strip remaining XML/HTML tags
     .replace(/\s+/g, ' ')        // Collapse whitespace
     .trim()
+}
+
+/**
+ * Normalize user-provided working directory input.
+ *
+ * Goals:
+ * - Handle shell-escaped paths copied from terminals (e.g. `My\\ Documents`)
+ * - Treat accidental file paths as "use the parent directory"
+ * - Expand `~/` to an absolute path
+ */
+function normalizeWorkingDirectoryInput(raw?: string | null): string | undefined {
+  if (!raw) return undefined
+  let p = String(raw).trim()
+  if (!p) return undefined
+
+  // Strip simple surrounding quotes
+  if ((p.startsWith('"') && p.endsWith('"')) || (p.startsWith("'") && p.endsWith("'"))) {
+    p = p.slice(1, -1).trim()
+    if (!p) return undefined
+  }
+
+  // Unescape common shell escapes
+  p = p.replace(/\\ /g, ' ').replace(/\\~/g, '~')
+
+  // Expand ~/ to home
+  if (p.startsWith('~/')) {
+    p = join(app.getPath('home'), p.slice(2))
+  }
+
+  // If it looks like a file path, use its parent directory
+  const base = p.split('/').pop() || p
+  if (/\.[a-zA-Z0-9]{1,10}$/.test(base)) {
+    p = dirname(p)
+  }
+
+  // If the path exists and is a file, use its parent directory
+  try {
+    const st = statSync(p)
+    if (st.isFile()) {
+      p = dirname(p)
+    }
+  } catch {
+    // ignore (non-existent path, permission, etc.)
+  }
+
+  return p
 }
 
 /**
@@ -878,7 +924,7 @@ export class SessionManager {
             hasUnread: meta.hasUnread,  // Explicit unread flag for NEW badge state machine
             enabledSourceSlugs: undefined,  // Loaded with messages
             labels: meta.labels,
-            workingDirectory: meta.workingDirectory ?? wsDefaultWorkingDir,
+            workingDirectory: normalizeWorkingDirectoryInput(meta.workingDirectory ?? wsDefaultWorkingDir),
             sdkCwd: meta.sdkCwd,
             model: meta.model,
             thinkingLevel: meta.thinkingLevel,
@@ -1392,6 +1438,7 @@ export class SessionManager {
     } else {
       resolvedWorkingDir = options.workingDirectory
     }
+    resolvedWorkingDir = normalizeWorkingDirectoryInput(resolvedWorkingDir)
 
     // Use storage layer to create and persist the session
     const storedSession = await createStoredSession(workspaceRootPath, {
@@ -2238,14 +2285,14 @@ export class SessionManager {
   updateWorkingDirectory(sessionId: string, path: string): void {
     const managed = this.sessions.get(sessionId)
     if (managed) {
-      managed.workingDirectory = path
+      managed.workingDirectory = normalizeWorkingDirectoryInput(path)
       // Also update the agent's session config if agent exists
       if (managed.agent) {
-        managed.agent.updateWorkingDirectory(path)
+        managed.agent.updateWorkingDirectory(managed.workingDirectory)
       }
       this.persistSession(managed)
       // Notify renderer of the working directory change
-      this.sendEvent({ type: 'working_directory_changed', sessionId, workingDirectory: path }, managed.workspace.id)
+      this.sendEvent({ type: 'working_directory_changed', sessionId, workingDirectory: managed.workingDirectory }, managed.workspace.id)
     }
   }
 

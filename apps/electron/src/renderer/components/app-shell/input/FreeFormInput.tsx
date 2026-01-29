@@ -625,7 +625,7 @@ export function FreeFormInput({
     inputRef: richInputRef,
     skills,
     sources,
-    basePath: workingDirectory,
+    basePath: workingDirectory ? normalizeWorkingDirCandidate(workingDirectory) : undefined,
     onSelect: handleMentionSelect,
     workspaceId,
   })
@@ -1650,22 +1650,58 @@ export function FreeFormInput({
  * Helper functions for recent directories storage
  */
 function getRecentDirs(): string[] {
-  return storage.get<string[]>(storage.KEYS.recentWorkingDirs, [])
+  const raw = storage.get<string[]>(storage.KEYS.recentWorkingDirs, [])
+  // Clean up older stored values that may contain shell-escaped paths or file paths.
+  // This prevents UI from showing `\ ` escapes and avoids treating a file as a working directory.
+  const normalized = raw
+    .map(p => normalizeWorkingDirCandidate(p))
+    .filter((p): p is string => Boolean(p))
+  // De-dupe while preserving order
+  const seen = new Set<string>()
+  const deduped = normalized.filter(p => (seen.has(p) ? false : (seen.add(p), true)))
+  if (deduped.length !== raw.length || deduped.some((p, i) => p !== raw[i])) {
+    storage.set(storage.KEYS.recentWorkingDirs, deduped.slice(0, 25))
+  }
+  return deduped.slice(0, 25)
 }
 
 function addRecentDir(path: string): void {
-  const recent = getRecentDirs().filter(p => p !== path)
-  const updated = [path, ...recent].slice(0, 25)
+  const normalized = normalizeWorkingDirCandidate(path)
+  if (!normalized) return
+  const recent = getRecentDirs().filter(p => p !== normalized)
+  const updated = [normalized, ...recent].slice(0, 25)
   storage.set(storage.KEYS.recentWorkingDirs, updated)
+}
+
+function unescapeShellPath(path: string): string {
+  // Users often paste paths copied from a shell (e.g. `/Users/me/My\\ Documents/file.png`)
+  // where spaces are escaped. We want to display and store the real path.
+  return path
+    .replace(/\\ /g, ' ')
+    .replace(/\\~/g, '~')
+}
+
+function normalizeWorkingDirCandidate(path: string): string {
+  const trimmed = (path ?? '').trim()
+  if (!trimmed) return ''
+  const unescaped = unescapeShellPath(trimmed)
+  // If a file path is accidentally provided, treat its parent folder as the working directory.
+  const lastSep = unescaped.lastIndexOf(PATH_SEP)
+  const base = lastSep >= 0 ? unescaped.slice(lastSep + 1) : unescaped
+  if (/\.[a-zA-Z0-9]{1,10}$/.test(base)) {
+    return lastSep >= 0 ? (unescaped.slice(0, lastSep) || PATH_SEP) : unescaped
+  }
+  return unescaped
 }
 
 /**
  * Format path for display, with home directory shortened
  */
 function formatPathForDisplay(path: string, homeDir: string): string {
-  let displayPath = path
-  if (homeDir && path.startsWith(homeDir)) {
-    const relativePath = path.slice(homeDir.length)
+  const normalized = normalizeWorkingDirCandidate(path)
+  let displayPath = normalized
+  if (homeDir && normalized.startsWith(homeDir)) {
+    const relativePath = normalized.slice(homeDir.length)
     // Remove leading separator if present, show root separator if empty
     displayPath = relativePath.startsWith(PATH_SEP)
       ? relativePath.slice(1)
@@ -1678,24 +1714,57 @@ function formatPathForDisplay(path: string, homeDir: string): string {
  * OpenInButton - Dropdown button to open working directory in various apps
  */
 function OpenInButton({ workingDirectory }: { workingDirectory?: string }) {
+  const normalizedWorkingDirectory = React.useMemo(() => {
+    if (!workingDirectory) return undefined
+    const normalized = normalizeWorkingDirCandidate(workingDirectory)
+    return normalized || undefined
+  }, [workingDirectory])
+
   const [isOpen, setIsOpen] = React.useState(false)
   const [availableApps, setAvailableApps] = React.useState<import('../../../../shared/types').AvailableApp[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
 
-  // Fetch available apps when dropdown opens
+  // Fetch available apps on mount (cached, don't refetch on every open)
   React.useEffect(() => {
-    if (isOpen && workingDirectory) {
-      window.electronAPI?.getAvailableApps?.(workingDirectory).then(apps => {
-        setAvailableApps(apps || [])
-      })
+    let cancelled = false
+
+    if (!normalizedWorkingDirectory) {
+      setAvailableApps([])
+      setIsLoading(false)
+      return
     }
-  }, [isOpen, workingDirectory])
+
+    const promise = window.electronAPI?.getAvailableApps?.(normalizedWorkingDirectory)
+    if (!promise) {
+      setAvailableApps([])
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true)
+    promise
+      .then(apps => {
+        if (cancelled) return
+        setAvailableApps(apps || [])
+        setIsLoading(false)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setAvailableApps([])
+        setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [normalizedWorkingDirectory])
 
   const handleOpenWith = React.useCallback((appId: string) => {
-    if (workingDirectory) {
-      window.electronAPI?.openWithApp?.(workingDirectory, appId)
+    if (normalizedWorkingDirectory) {
+      window.electronAPI?.openWithApp?.(normalizedWorkingDirectory, appId)
       setIsOpen(false)
     }
-  }, [workingDirectory])
+  }, [normalizedWorkingDirectory])
 
   // Handle keyboard shortcuts (1-9 for quick selection)
   React.useEffect(() => {
@@ -1716,7 +1785,7 @@ function OpenInButton({ workingDirectory }: { workingDirectory?: string }) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, availableApps, handleOpenWith])
 
-  if (!workingDirectory) return null
+  if (!normalizedWorkingDirectory) return null
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -1747,14 +1816,17 @@ function OpenInButton({ workingDirectory }: { workingDirectory?: string }) {
             <span className="flex-1">{app.name}</span>
           </StyledDropdownMenuItem>
         ))}
-        {availableApps.length === 0 && (
+        {isLoading && (
           <div className="px-3 py-2 text-sm text-muted-foreground">Loading...</div>
+        )}
+        {!isLoading && availableApps.length === 0 && (
+          <div className="px-3 py-2 text-sm text-muted-foreground">No apps found</div>
         )}
         <StyledDropdownMenuSeparator />
         <StyledDropdownMenuItem
           onClick={() => {
-            if (workingDirectory) {
-              navigator.clipboard.writeText(workingDirectory)
+            if (normalizedWorkingDirectory) {
+              navigator.clipboard.writeText(normalizedWorkingDirectory)
               setIsOpen(false)
             }
           }}
@@ -1783,6 +1855,12 @@ function WorkingDirectoryBadge({
   sessionFolderPath?: string
   isEmptySession?: boolean
 }) {
+  const normalizedWorkingDirectory = React.useMemo(() => {
+    if (!workingDirectory) return undefined
+    const normalized = normalizeWorkingDirCandidate(workingDirectory)
+    return normalized || undefined
+  }, [workingDirectory])
+
   const [recentDirs, setRecentDirs] = React.useState<string[]>([])
   const [popoverOpen, setPopoverOpen] = React.useState(false)
   const [homeDir, setHomeDir] = React.useState<string>('')
@@ -1800,14 +1878,14 @@ function WorkingDirectoryBadge({
 
   // Fetch git branch when working directory changes
   React.useEffect(() => {
-    if (workingDirectory) {
-      window.electronAPI?.getGitBranch?.(workingDirectory).then((branch: string | null) => {
+    if (normalizedWorkingDirectory) {
+      window.electronAPI?.getGitBranch?.(normalizedWorkingDirectory).then((branch: string | null) => {
         setGitBranch(branch)
       })
     } else {
       setGitBranch(null)
     }
-  }, [workingDirectory])
+  }, [normalizedWorkingDirectory])
 
   // Reset filter and focus input when popover opens
   React.useEffect(() => {
@@ -1828,7 +1906,7 @@ function WorkingDirectoryBadge({
     if (selectedPath) {
       addRecentDir(selectedPath)
       setRecentDirs(getRecentDirs())
-      onWorkingDirectoryChange(selectedPath)
+      onWorkingDirectoryChange(normalizeWorkingDirCandidate(selectedPath))
     }
   }
 
@@ -1848,7 +1926,7 @@ function WorkingDirectoryBadge({
 
   // Filter out current directory from recent list and sort alphabetically by folder name
   const filteredRecent = recentDirs
-    .filter(p => p !== workingDirectory)
+    .filter(p => p !== normalizedWorkingDirectory)
     .sort((a, b) => {
       const nameA = getPathBasename(a).toLowerCase()
       const nameB = getPathBasename(b).toLowerCase()
@@ -1858,11 +1936,11 @@ function WorkingDirectoryBadge({
   const showFilter = filteredRecent.length > 5
 
   // Determine label - "Work in Folder" if not set or at session root, otherwise folder name
-  const hasFolder = !!workingDirectory && workingDirectory !== sessionFolderPath
-  const folderName = hasFolder ? (getPathBasename(workingDirectory) || 'Folder') : 'Work in Folder'
+  const hasFolder = !!normalizedWorkingDirectory && normalizedWorkingDirectory !== sessionFolderPath
+  const folderName = hasFolder ? (getPathBasename(normalizedWorkingDirectory) || 'Folder') : 'Work in Folder'
 
   // Show reset option when a folder is selected and it differs from session folder
-  const showReset = hasFolder && sessionFolderPath && sessionFolderPath !== workingDirectory
+  const showReset = hasFolder && sessionFolderPath && sessionFolderPath !== normalizedWorkingDirectory
 
   // Styles matching todo-filter-menu.tsx for consistency
   const MENU_CONTAINER_STYLE = 'min-w-[200px] max-w-[400px] overflow-hidden rounded-[8px] bg-background text-foreground shadow-modal-small p-0'
@@ -1884,7 +1962,7 @@ function WorkingDirectoryBadge({
               hasFolder ? (
                 <span className="flex flex-col gap-0.5">
                   <span className="font-medium">Working directory</span>
-                  <span className="text-xs opacity-70">{formatPathForDisplay(workingDirectory, homeDir)}</span>
+                  <span className="text-xs opacity-70">{formatPathForDisplay(normalizedWorkingDirectory ?? '', homeDir)}</span>
                   {gitBranch && <span className="text-xs opacity-70">on {gitBranch}</span>}
                 </span>
               ) : "Choose working directory"
@@ -1911,14 +1989,14 @@ function WorkingDirectoryBadge({
             {/* Current Folder Display - shown at top with checkmark */}
             {hasFolder && (
               <CommandPrimitive.Item
-                value={`current-${workingDirectory}`}
+                value={`current-${normalizedWorkingDirectory}`}
                 className={cn(MENU_ITEM_STYLE, 'pointer-events-none bg-foreground/5')}
                 disabled
               >
                 <Icon_Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
                 <span className="flex-1 min-w-0 truncate">
                   <span>{folderName}</span>
-                  <span className="text-muted-foreground ml-1.5">{formatPathForDisplay(workingDirectory, homeDir)}</span>
+                  <span className="text-muted-foreground ml-1.5">{formatPathForDisplay(normalizedWorkingDirectory ?? '', homeDir)}</span>
                 </span>
                 <Check className="h-4 w-4 shrink-0" />
               </CommandPrimitive.Item>

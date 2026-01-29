@@ -1020,42 +1020,37 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       ]
     }
 
-    // macOS: Check for common development apps
+    // macOS: Check for common development apps by checking /Applications directly
     const apps: AvailableApp[] = []
     const appChecks = [
-      { id: 'finder', name: 'Finder', bundleId: 'com.apple.finder' },
-      { id: 'cursor', name: 'Cursor', bundleId: 'com.todesktop.230313mzl4w4u92' },
-      { id: 'vscode', name: 'VS Code', bundleId: 'com.microsoft.VSCode' },
-      { id: 'zed', name: 'Zed', bundleId: 'dev.zed.Zed' },
-      { id: 'sublime', name: 'Sublime Text', bundleId: 'com.sublimetext.4' },
-      { id: 'pycharm', name: 'PyCharm', bundleId: 'com.jetbrains.pycharm' },
-      { id: 'androidstudio', name: 'Android Studio', bundleId: 'com.google.android.studio' },
-      { id: 'webstorm', name: 'WebStorm', bundleId: 'com.jetbrains.WebStorm' },
-      { id: 'ghostty', name: 'Ghostty', bundleId: 'com.mitchellh.ghostty' },
-      { id: 'iterm', name: 'iTerm', bundleId: 'com.googlecode.iterm2' },
-      { id: 'warp', name: 'Warp', bundleId: 'dev.warp.Warp-Stable' },
-      { id: 'terminal', name: 'Terminal', bundleId: 'com.apple.Terminal' },
-      { id: 'github-desktop', name: 'GitHub Desktop', bundleId: 'com.github.GitHubClient' },
-      { id: 'sourcetree', name: 'Sourcetree', bundleId: 'com.torusknot.SourceTreeNotMAS' },
-      { id: 'fork', name: 'Fork', bundleId: 'com.DanPristupov.Fork' },
-      { id: 'goland', name: 'GoLand', bundleId: 'com.jetbrains.goland' },
+      { id: 'finder', name: 'Finder', appPath: null }, // Finder is always available
+      { id: 'cursor', name: 'Cursor', appPath: '/Applications/Cursor.app' },
+      { id: 'vscode', name: 'VS Code', appPath: '/Applications/Visual Studio Code.app' },
+      { id: 'zed', name: 'Zed', appPath: '/Applications/Zed.app' },
+      { id: 'sublime', name: 'Sublime Text', appPath: '/Applications/Sublime Text.app' },
+      { id: 'pycharm', name: 'PyCharm', appPath: '/Applications/PyCharm.app' },
+      { id: 'androidstudio', name: 'Android Studio', appPath: '/Applications/Android Studio.app' },
+      { id: 'webstorm', name: 'WebStorm', appPath: '/Applications/WebStorm.app' },
+      { id: 'ghostty', name: 'Ghostty', appPath: '/Applications/Ghostty.app' },
+      { id: 'iterm', name: 'iTerm', appPath: '/Applications/iTerm.app' },
+      { id: 'warp', name: 'Warp', appPath: '/Applications/Warp.app' },
+      { id: 'terminal', name: 'Terminal', appPath: '/System/Applications/Utilities/Terminal.app' },
+      { id: 'github-desktop', name: 'GitHub Desktop', appPath: '/Applications/GitHub Desktop.app' },
+      { id: 'sourcetree', name: 'Sourcetree', appPath: '/Applications/Sourcetree.app' },
+      { id: 'fork', name: 'Fork', appPath: '/Applications/Fork.app' },
+      { id: 'goland', name: 'GoLand', appPath: '/Applications/GoLand.app' },
     ]
 
     let shortcutNum = 1
     for (const appDef of appChecks) {
-      try {
-        // Check if app exists using mdfind (faster than checking /Applications directly)
-        const result = execSync(`mdfind "kMDItemCFBundleIdentifier == '${appDef.bundleId}'" 2>/dev/null`, { encoding: 'utf8', timeout: 1000 })
-        if (result.trim()) {
-          apps.push({
-            id: appDef.id,
-            name: appDef.name,
-            shortcut: shortcutNum <= 9 ? `${shortcutNum}` : undefined,
-          })
-          shortcutNum++
-        }
-      } catch {
-        // App not found or mdfind failed, skip
+      // Finder and Terminal are always available on macOS
+      if (appDef.appPath === null || existsSync(appDef.appPath)) {
+        apps.push({
+          id: appDef.id,
+          name: appDef.name,
+          shortcut: shortcutNum <= 9 ? `${shortcutNum}` : undefined,
+        })
+        shortcutNum++
       }
     }
 
