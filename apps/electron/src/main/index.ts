@@ -160,7 +160,7 @@ app.on('open-file', (event, path) => {
   if (windowManager) {
     // App is ready - open new chat with workdir
     const encodedPath = encodeURIComponent(path)
-    const deepLink = `bunnyagents://action/new-chat?window=focused&workdir=${encodedPath}`
+    const deepLink = `bunnyagents://action/new-chat?workdir=${encodedPath}`
     handleDeepLink(deepLink, windowManager).catch(err => {
       mainLog.error('Failed to handle open-file deep link:', err)
     })
@@ -342,7 +342,7 @@ app.whenReady().then(async () => {
     if (pendingFolderPath) {
       mainLog.info('Processing pending folder path:', pendingFolderPath)
       const encodedPath = encodeURIComponent(pendingFolderPath)
-      const deepLink = `bunnyagents://action/new-chat?window=focused&workdir=${encodedPath}`
+      const deepLink = `bunnyagents://action/new-chat?workdir=${encodedPath}`
       await handleDeepLink(deepLink, windowManager)
       pendingFolderPath = null
     }
