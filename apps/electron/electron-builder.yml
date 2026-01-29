@@ -50,6 +50,12 @@ mac:
   # The value must match --app-icon used in actool (see afterPack.js)
   extendInfo:
     CFBundleIconName: AppIcon
+    # Support opening folders via drag-to-dock or 'open -a Bunny /path'
+    CFBundleDocumentTypes:
+      - CFBundleTypeRole: Viewer
+        LSItemContentTypes:
+          - public.folder
+        LSHandlerRank: Alternate
   target:
     - target: dmg
       arch:

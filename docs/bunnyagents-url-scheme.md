@@ -345,6 +345,20 @@ open "bunnyagents://action/new-chat?input=Help%20me%20review%20this%20code&send=
 xdg-open "bunnyagents://action/new-chat?input=Help%20me%20review%20this%20code&send=true"
 ```
 
+### 从目录打开应用
+
+可以直接在项目目录中使用 `open -a` 命令打开 Bunny 并设置 working directory：
+
+```bash
+# 在当前目录打开 Bunny
+open -a Bunny .
+
+# 打开指定目录
+open -a Bunny /Users/me/project
+```
+
+也可以将文件夹拖拽到 Dock 上的 Bunny 图标来打开。
+
 ### 从脚本打开特定会话
 
 ```bash

@@ -45,8 +45,8 @@ Sentry.init({
           for (const key of Object.keys(breadcrumb.data)) {
             const lowerKey = key.toLowerCase()
             if (lowerKey.includes('token') || lowerKey.includes('key') ||
-                lowerKey.includes('secret') || lowerKey.includes('password') ||
-                lowerKey.includes('credential') || lowerKey.includes('auth')) {
+              lowerKey.includes('secret') || lowerKey.includes('password') ||
+              lowerKey.includes('credential') || lowerKey.includes('auth')) {
               breadcrumb.data[key] = '[REDACTED]'
             }
           }
@@ -102,6 +102,9 @@ let sessionManager: SessionManager | null = null
 // Store pending deep link if app not ready yet (cold start)
 let pendingDeepLink: string | null = null
 
+// Store pending folder path if app not ready yet (cold start via 'open -a Bunny /path')
+let pendingFolderPath: string | null = null
+
 // Set app name early (before app.whenReady) to ensure correct macOS menu bar title
 // Supports multi-instance dev: CRAFT_APP_NAME env var (e.g., "Craft Agents [1]")
 app.setName(process.env.CRAFT_APP_NAME || 'Bunny')
@@ -134,6 +137,36 @@ app.on('open-url', (event, url) => {
   } else {
     // App not ready - store for later
     pendingDeepLink = url
+  }
+})
+
+// Handle folder drop on dock icon or 'open -a Bunny /path' command (macOS)
+app.on('open-file', (event, path) => {
+  event.preventDefault()
+  mainLog.info('Received open-file:', path)
+
+  // Check if path is a directory
+  try {
+    const stat = require('fs').statSync(path)
+    if (!stat.isDirectory()) {
+      mainLog.info('open-file: not a directory, ignoring:', path)
+      return
+    }
+  } catch (err) {
+    mainLog.error('open-file: failed to stat path:', path, err)
+    return
+  }
+
+  if (windowManager) {
+    // App is ready - open new chat with workdir
+    const encodedPath = encodeURIComponent(path)
+    const deepLink = `bunnyagents://action/new-chat?window=focused&workdir=${encodedPath}`
+    handleDeepLink(deepLink, windowManager).catch(err => {
+      mainLog.error('Failed to handle open-file deep link:', err)
+    })
+  } else {
+    // App not ready - store for later
+    pendingFolderPath = path
   }
 })
 
@@ -303,6 +336,15 @@ app.whenReady().then(async () => {
       mainLog.info('Processing pending deep link:', pendingDeepLink)
       await handleDeepLink(pendingDeepLink, windowManager)
       pendingDeepLink = null
+    }
+
+    // Process pending folder path from cold start (via 'open -a Bunny /path')
+    if (pendingFolderPath) {
+      mainLog.info('Processing pending folder path:', pendingFolderPath)
+      const encodedPath = encodeURIComponent(pendingFolderPath)
+      const deepLink = `bunnyagents://action/new-chat?window=focused&workdir=${encodedPath}`
+      await handleDeepLink(deepLink, windowManager)
+      pendingFolderPath = null
     }
 
     mainLog.info('App initialized successfully')
