@@ -721,12 +721,16 @@ function AppShellContent({
   // Enabled permission modes for Shift+Tab cycling (min 2 modes)
   const [enabledModes, setEnabledModes] = React.useState<PermissionMode[]>(['safe', 'ask', 'allow-all'])
 
-  // Load workspace settings (for localMcpEnabled and cyclablePermissionModes) on workspace change
+  // Whether session status feature is enabled (shows Status section in sidebar)
+  const [statusEnabled, setStatusEnabled] = React.useState(true)
+
+  // Load workspace settings (for localMcpEnabled, cyclablePermissionModes, statusEnabled) on workspace change
   React.useEffect(() => {
     if (!activeWorkspaceId) return
     window.electronAPI.getWorkspaceSettings(activeWorkspaceId).then((settings) => {
       if (settings) {
         setLocalMcpEnabled(settings.localMcpEnabled ?? true)
+        setStatusEnabled(settings.statusEnabled ?? true)
         // Load cyclablePermissionModes from workspace settings
         if (settings.cyclablePermissionModes && settings.cyclablePermissionModes.length >= 2) {
           setEnabledModes(settings.cyclablePermissionModes)
@@ -1928,17 +1932,18 @@ function AppShellContent({
                       onClick: handleFlaggedClick,
                     },
                     // States: expandable section with status sub-items (drag-and-drop reorder)
-                    {
+                    // Only show if statusEnabled is true
+                    ...(statusEnabled ? [{
                       id: "nav:states",
                       title: "Status",
                       icon: CheckCircle2,
-                      variant: "ghost",
+                      variant: "ghost" as const,
                       onClick: () => toggleExpanded('nav:states'),
                       expandable: true,
                       expanded: isExpanded('nav:states'),
                       onToggle: () => toggleExpanded('nav:states'),
                       contextMenu: {
-                        type: 'allChats',
+                        type: 'allChats' as const,
                         onConfigureStatuses: openConfigureStatuses,
                       },
                       // Enable flat DnD reorder for status items
@@ -1958,7 +1963,7 @@ function AppShellContent({
                           onConfigureStatuses: openConfigureStatuses,
                         },
                       })),
-                    },
+                    }] : []),
                     // Labels: navigable header (shows all labeled sessions) + hierarchical tree (drag-and-drop reorder + re-parent)
                     {
                       id: "nav:labels",

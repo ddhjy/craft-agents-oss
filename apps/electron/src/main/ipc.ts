@@ -1450,6 +1450,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       thinkingLevel: config?.defaults?.thinkingLevel,
       workingDirectory: config?.defaults?.workingDirectory,
       localMcpEnabled: config?.localMcpServers?.enabled ?? true,
+      statusEnabled: config?.statusEnabled ?? true,
     }
   })
 
@@ -1459,7 +1460,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     const workspace = getWorkspaceOrThrow(workspaceId)
 
     // Validate key is a known workspace setting
-    const validKeys = ['name', 'model', 'enabledSourceSlugs', 'permissionMode', 'cyclablePermissionModes', 'thinkingLevel', 'workingDirectory', 'localMcpEnabled']
+    const validKeys = ['name', 'model', 'enabledSourceSlugs', 'permissionMode', 'cyclablePermissionModes', 'thinkingLevel', 'workingDirectory', 'localMcpEnabled', 'statusEnabled']
     if (!validKeys.includes(key)) {
       throw new Error(`Invalid workspace setting key: ${key}. Valid keys: ${validKeys.join(', ')}`)
     }
@@ -1477,6 +1478,9 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       // Store in localMcpServers.enabled (top-level, not in defaults)
       config.localMcpServers = config.localMcpServers || { enabled: true }
       config.localMcpServers.enabled = Boolean(value)
+    } else if (key === 'statusEnabled') {
+      // Store as top-level config property
+      config.statusEnabled = Boolean(value)
     } else {
       // Update the setting in defaults
       config.defaults = config.defaults || {}
