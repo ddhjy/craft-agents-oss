@@ -73,6 +73,8 @@ export const IDEA_MODELS = [
   { id: 'gpt-5-codex', name: 'GPT-5 Codex', description: 'Code optimized' },
   { id: 'gpt-4o', name: 'GPT-4o', description: 'Multimodal' },
   { id: 'eu/gpt-5.2', name: 'EU GPT-5.2', description: 'EU region' },
+  { id: 'eu/gpt-5.2-high', name: 'EU GPT-5.2 High', description: 'EU high quality' },
+  { id: 'eu/gpt-5.2-codex', name: 'EU GPT-5.2 Codex', description: 'EU code optimized' },
   { id: 'eu/gpt-5.1', name: 'EU GPT-5.1', description: 'EU region' },
   { id: 'eu/gpt-5.1-high', name: 'EU GPT-5.1 High', description: 'EU high quality' },
   { id: 'eu/gpt-5.1-codex-high', name: 'EU GPT-5.1 Codex High', description: 'EU code optimized' },
