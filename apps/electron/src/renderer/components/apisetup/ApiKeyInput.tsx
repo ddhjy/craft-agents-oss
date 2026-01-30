@@ -51,8 +51,10 @@ interface Preset {
   url: string
 }
 
-export const IDEA_BASE_URL = 'https://idea.bytedance.net/llm_middleware'
-export const IDEA_API_KEY = '1b3419c3d80bfa36af730b4a242ec2e19e889bf8946f61d2748cf2d4c024647b'
+// Import and re-export IDEA constants from shared package
+import { IDEA_BASE_URL, IDEA_API_KEY } from "@craft-agent/shared/config/config-defaults-schema"
+export { IDEA_BASE_URL, IDEA_API_KEY }
+
 
 const PRESETS: Preset[] = [
   { key: 'anthropic', label: 'Anthropic', url: 'https://api.anthropic.com' },

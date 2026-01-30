@@ -12,7 +12,8 @@
  */
 
 import { getCredentialManager } from '../credentials/index.ts';
-import { loadStoredConfig, getActiveWorkspace, type AuthType, type Workspace } from '../config/storage.ts';
+import { loadStoredConfig, loadConfigDefaults, getActiveWorkspace, saveConfig, ensureConfigDir, type AuthType, type Workspace, type StoredConfig } from '../config/storage.ts';
+import { IDEA_API_KEY } from '../config/config-defaults-schema.ts';
 import { refreshClaudeToken, isTokenExpired } from './claude-token.ts';
 import { debug } from '../utils/debug.ts';
 
@@ -220,11 +221,47 @@ export async function getValidClaudeOAuthToken(): Promise<TokenResult> {
 }
 
 /**
+ * Initialize default configuration for new installations.
+ * Uses built-in IDEA (ByteDance) provider as the default.
+ */
+async function initializeDefaultConfig(): Promise<StoredConfig> {
+  debug('[auth] Initializing default config with built-in IDEA provider');
+
+  const defaults = loadConfigDefaults();
+  const manager = getCredentialManager();
+
+  // Create initial config with IDEA defaults
+  ensureConfigDir();
+  const config: StoredConfig = {
+    authType: defaults.defaults.authType,
+    anthropicBaseUrl: defaults.defaults.anthropicBaseUrl,
+    customModel: defaults.defaults.customModel,
+    workspaces: [],
+    activeWorkspaceId: null,
+    activeSessionId: null,
+  };
+
+  // Set the built-in API key
+  await manager.setApiKey(IDEA_API_KEY);
+
+  // Save config
+  saveConfig(config);
+
+  debug('[auth] Default config initialized successfully');
+  return config;
+}
+
+/**
  * Get complete authentication state from all sources (config file + credential store)
  */
 export async function getAuthState(): Promise<AuthState> {
-  const config = loadStoredConfig();
+  let config = loadStoredConfig();
   const manager = getCredentialManager();
+
+  // Auto-initialize config for new installations
+  if (!config) {
+    config = await initializeDefaultConfig();
+  }
 
   const apiKey = await manager.getApiKey();
   const tokenResult = await getValidClaudeOAuthToken();
