@@ -11,11 +11,34 @@
  * our native OAuth flow. This is a one-time migration.
  */
 
+import { existsSync } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
 import { getCredentialManager } from '../credentials/index.ts';
-import { loadStoredConfig, loadConfigDefaults, getActiveWorkspace, saveConfig, ensureConfigDir, type AuthType, type Workspace, type StoredConfig } from '../config/storage.ts';
+import { loadStoredConfig, loadConfigDefaults, getActiveWorkspace, saveConfig, ensureConfigDir, generateWorkspaceId, type AuthType, type Workspace, type StoredConfig } from '../config/storage.ts';
 import { IDEA_API_KEY } from '../config/config-defaults-schema.ts';
 import { refreshClaudeToken, isTokenExpired } from './claude-token.ts';
 import { debug } from '../utils/debug.ts';
+
+function createDefaultWorkspace(): Workspace {
+  const workspaceId = generateWorkspaceId();
+  const workspaceName = 'My Workspace';
+  const baseDir = join(homedir(), '.craft-agent', 'workspaces');
+  const slugBase = 'my-workspace';
+  let rootPath = join(baseDir, slugBase);
+  let counter = 2;
+  while (existsSync(rootPath)) {
+    rootPath = join(baseDir, `${slugBase}-${counter}`);
+    counter++;
+  }
+
+  return {
+    id: workspaceId,
+    name: workspaceName,
+    rootPath,
+    createdAt: Date.now(),
+  };
+}
 
 // ============================================
 // Types
@@ -241,6 +264,15 @@ async function initializeDefaultConfig(): Promise<StoredConfig> {
     activeSessionId: null,
   };
 
+  // Ensure a default workspace exists.
+  // Onboarding normally creates a workspace, but we skip onboarding for new installs.
+  // Without a workspace, the renderer can't create a chat session.
+  if (config.workspaces.length === 0) {
+    const workspace = createDefaultWorkspace();
+    config.workspaces.push(workspace);
+    config.activeWorkspaceId = workspace.id;
+  }
+
   // Set the built-in API key
   await manager.setApiKey(IDEA_API_KEY);
 
@@ -261,6 +293,16 @@ export async function getAuthState(): Promise<AuthState> {
   // Auto-initialize config for new installations
   if (!config) {
     config = await initializeDefaultConfig();
+  }
+
+  // Migration/repair: early versions of auto-init created config with no workspaces,
+  // which breaks "New Chat". If we detect that state, create a default workspace.
+  if (config.workspaces.length === 0) {
+    debug('[auth] Config has no workspaces; creating a default workspace');
+    const workspace = createDefaultWorkspace();
+    config.workspaces.push(workspace);
+    config.activeWorkspaceId = workspace.id;
+    saveConfig(config);
   }
 
   const apiKey = await manager.getApiKey();
