@@ -66,6 +66,7 @@ import {
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher"
 import { SessionList } from "./SessionList"
 import { MainContentPanel } from "./MainContentPanel"
+import type { ChatDisplayHandle } from "./ChatDisplay"
 import { LeftSidebar } from "./LeftSidebar"
 import { useSession } from "@/hooks/useSession"
 import { ensureSessionMessagesLoadedAtom } from "@/atoms/sessions"
@@ -628,6 +629,23 @@ function AppShellContent({
   const [searchActive, setSearchActive] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState('')
 
+  // Ref for ChatDisplay navigation (exposed via forwardRef)
+  const chatDisplayRef = React.useRef<ChatDisplayHandle>(null)
+  // Track match count and index from ChatDisplay (for SessionList navigation UI)
+  const [chatMatchInfo, setChatMatchInfo] = React.useState<{ count: number; index: number }>({ count: 0, index: 0 })
+
+  // Callback for immediate match info updates from ChatDisplay
+  const handleChatMatchInfoChange = React.useCallback((info: { count: number; index: number }) => {
+    setChatMatchInfo(info)
+  }, [])
+
+  // Reset match info when search is deactivated
+  React.useEffect(() => {
+    if (!searchActive || !searchQuery) {
+      setChatMatchInfo({ count: 0, index: 0 })
+    }
+  }, [searchActive, searchQuery])
+
   // Filter dropdown: inline search query for filtering statuses/labels in a flat list.
   // When empty, the dropdown shows hierarchical submenus. When typing, shows a flat filtered list.
   const [filterDropdownQuery, setFilterDropdownQuery] = React.useState('')
@@ -720,8 +738,7 @@ function AppShellContent({
 
   // Enabled permission modes for Shift+Tab cycling (min 2 modes)
   const [enabledModes, setEnabledModes] = React.useState<PermissionMode[]>(['safe', 'ask', 'allow-all'])
-
-  // Whether session status feature is enabled (shows Status section in sidebar)
+  // Whether session status (todo) feature is enabled
   const [statusEnabled, setStatusEnabled] = React.useState(false)
 
   // Load workspace settings (for localMcpEnabled, cyclablePermissionModes, statusEnabled) on workspace change
@@ -730,11 +747,12 @@ function AppShellContent({
     window.electronAPI.getWorkspaceSettings(activeWorkspaceId).then((settings) => {
       if (settings) {
         setLocalMcpEnabled(settings.localMcpEnabled ?? true)
-        setStatusEnabled(settings.statusEnabled ?? false)
         // Load cyclablePermissionModes from workspace settings
         if (settings.cyclablePermissionModes && settings.cyclablePermissionModes.length >= 2) {
           setEnabledModes(settings.cyclablePermissionModes)
         }
+        // Load statusEnabled from workspace settings
+        setStatusEnabled(settings.statusEnabled ?? false)
       }
     }).catch((err) => {
       console.error('[Chat] Failed to load workspace settings:', err)
@@ -962,6 +980,9 @@ function AppShellContent({
       // History navigation
       { key: '[', cmd: true, action: goBack },
       { key: ']', cmd: true, action: goForward },
+      // Search match navigation (CMD+G next, CMD+SHIFT+G prev)
+      { key: 'g', cmd: true, action: () => chatDisplayRef.current?.goToNextMatch(), when: () => searchActive && (chatMatchInfo.count ?? 0) > 0 },
+      { key: 'g', cmd: true, shift: true, action: () => chatDisplayRef.current?.goToPrevMatch(), when: () => searchActive && (chatMatchInfo.count ?? 0) > 0 },
       // ESC to stop processing - requires double-press within 1 second
       // First press shows warning overlay, second press interrupts
       { key: 'Escape', action: () => {
@@ -1092,11 +1113,12 @@ function AppShellContent({
   const sessionMetaMap = useAtomValue(sessionMetaMapAtom)
 
   // Filter session metadata by active workspace
+  // Also exclude hidden sessions (mini-agent sessions) from all counts and lists
   const workspaceSessionMetas = useMemo(() => {
     const metas = Array.from(sessionMetaMap.values())
     return activeWorkspaceId
-      ? metas.filter(s => s.workspaceId === activeWorkspaceId)
-      : metas
+      ? metas.filter(s => s.workspaceId === activeWorkspaceId && !s.hidden)
+      : metas.filter(s => !s.hidden)
   }, [sessionMetaMap, activeWorkspaceId])
 
   // Count sessions by todo state (scoped to workspace)
@@ -1337,7 +1359,12 @@ function AppShellContent({
     statusEnabled,
     onSessionSourcesChange: handleSessionSourcesChange,
     rightSidebarButton: rightSidebarOpenButton,
-  }), [contextValue, handleDeleteSession, sources, skills, labelConfigs, handleSessionLabelsChange, enabledModes, effectiveTodoStates, statusEnabled, handleSessionSourcesChange, rightSidebarOpenButton])
+    // Search state for ChatDisplay highlighting
+    sessionListSearchQuery: searchActive ? searchQuery : undefined,
+    isSearchModeActive: searchActive,
+    chatDisplayRef,
+    onChatMatchInfoChange: handleChatMatchInfoChange,
+  }), [contextValue, handleDeleteSession, sources, skills, labelConfigs, handleSessionLabelsChange, enabledModes, effectiveTodoStates, statusEnabled, handleSessionSourcesChange, rightSidebarOpenButton, searchActive, searchQuery, handleChatMatchInfoChange])
 
   // Persist expanded folders to localStorage
   React.useEffect(() => {
@@ -1544,6 +1571,10 @@ function AppShellContent({
   // Create a new chat and select it
   const handleNewChat = useCallback(async (_useCurrentAgent: boolean = true) => {
     if (!activeWorkspace) return
+
+    // Exit search mode and switch to All Chats
+    setSearchActive(false)
+    setSearchQuery('')
 
     const newSession = await onCreateSession(activeWorkspace.id)
     // Navigate to the new session via central routing
@@ -1935,7 +1966,7 @@ function AppShellContent({
                     // States: expandable section with status sub-items (drag-and-drop reorder)
                     // Only show if statusEnabled is true
                     ...(statusEnabled ? [{
-                      id: "nav:states",
+                      id: "nav:states" as const,
                       title: "Status",
                       icon: CheckCircle2,
                       variant: "ghost" as const,
@@ -2778,7 +2809,7 @@ function AppShellContent({
                 {/* Key on sidebarMode forces full remount when switching views, skipping animations */}
                 <SessionList
                   key={chatFilter?.kind}
-                  items={filteredSessionMetas}
+                  items={searchActive ? workspaceSessionMetas : filteredSessionMetas}
                   onDelete={handleDeleteSession}
                   onFlag={onFlagSession}
                   onUnflag={onUnflagSession}
@@ -2824,6 +2855,9 @@ function AppShellContent({
                   evaluateViews={evaluateViews}
                   labels={labelConfigs}
                   onLabelsChange={handleSessionLabelsChange}
+                  workspaceId={activeWorkspaceId ?? undefined}
+                  statusFilter={listFilter}
+                  labelFilterMap={labelFilter}
                   statusEnabled={statusEnabled}
                 />
               </>

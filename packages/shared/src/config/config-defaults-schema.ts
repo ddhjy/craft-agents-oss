@@ -18,6 +18,9 @@ export interface ConfigDefaults {
     anthropicBaseUrl?: string;
     /** Default model for new installations */
     customModel?: string;
+    autoCapitalisation: boolean;
+    sendMessageKey: 'enter' | 'cmd-enter';
+    spellCheck: boolean;
   };
   workspaceDefaults: {
     thinkingLevel: ThinkingLevel;
@@ -50,6 +53,9 @@ export const BUNDLED_CONFIG_DEFAULTS: ConfigDefaults = {
     colorTheme: 'default',
     anthropicBaseUrl: IDEA_BASE_URL,
     customModel: IDEA_DEFAULT_MODEL,
+    autoCapitalisation: true,
+    sendMessageKey: 'enter',
+    spellCheck: false,
   },
   workspaceDefaults: {
     thinkingLevel: 'think',
