@@ -328,6 +328,8 @@ export function FreeFormInput({
   const [isFocused, setIsFocused] = React.useState(false)
   const [inputMaxHeight, setInputMaxHeight] = React.useState(540)
   const [modelDropdownOpen, setModelDropdownOpen] = React.useState(false)
+  const [modelSearchFilter, setModelSearchFilter] = React.useState('')
+  const [modelHighlightIndex, setModelHighlightIndex] = React.useState(0)
 
   // Input settings (loaded from config)
   const [autoCapitalisation, setAutoCapitalisation] = React.useState(true)
@@ -1538,27 +1540,78 @@ export function FreeFormInput({
               </TooltipTrigger>
               <TooltipContent side="top">Model</TooltipContent>
             </Tooltip>
-            <StyledDropdownMenuContent side="top" align="end" sideOffset={8} className="min-w-[240px] max-h-[400px] overflow-y-auto">
+            <StyledDropdownMenuContent side="top" align="end" sideOffset={8} className="min-w-[240px] max-h-[400px] overflow-y-auto" onCloseAutoFocus={() => { setModelSearchFilter(''); setModelHighlightIndex(0) }}>
               {/* IDEA provider: show selectable model list */}
               {anthropicBaseUrl === IDEA_BASE_URL && customModel ? (
-                IDEA_MODELS.map((model) => {
-                  const isSelected = customModel === model.id
+                (() => {
+                  const filteredModels = IDEA_MODELS.filter((model) => {
+                    if (!modelSearchFilter) return true
+                    const query = modelSearchFilter.toLowerCase()
+                    return model.name.toLowerCase().includes(query) || model.id.toLowerCase().includes(query)
+                  })
                   return (
-                    <StyledDropdownMenuItem
-                      key={model.id}
-                      onSelect={() => onCustomModelChange?.(model.id)}
-                      className="flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer"
-                    >
-                      <div className="text-left">
-                        <div className="font-medium text-sm">{model.name}</div>
-                        <div className="text-xs text-muted-foreground">{model.description}</div>
+                    <>
+                      {/* Search input */}
+                      <div className="px-2 py-1.5 sticky top-0 bg-popover z-10">
+                        <input
+                          type="text"
+                          placeholder="Search models..."
+                          value={modelSearchFilter}
+                          onChange={(e) => {
+                            setModelSearchFilter(e.target.value)
+                            setModelHighlightIndex(0)
+                          }}
+                          className="w-full px-2 py-1.5 text-sm bg-muted/50 border border-border rounded-md outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'ArrowDown') {
+                              e.preventDefault()
+                              setModelHighlightIndex((prev) => Math.min(prev + 1, filteredModels.length - 1))
+                            } else if (e.key === 'ArrowUp') {
+                              e.preventDefault()
+                              setModelHighlightIndex((prev) => Math.max(prev - 1, 0))
+                            } else if (e.key === 'Enter' && filteredModels.length > 0) {
+                              e.preventDefault()
+                              const selectedModel = filteredModels[modelHighlightIndex]
+                              if (selectedModel) {
+                                onCustomModelChange?.(selectedModel.id)
+                                setModelDropdownOpen(false)
+                              }
+                            } else if (e.key !== 'Escape') {
+                              e.stopPropagation()
+                            }
+                          }}
+                        />
                       </div>
-                      {isSelected && (
-                        <Check className="h-4 w-4 text-foreground shrink-0 ml-3" />
+                      {filteredModels.map((model, index) => {
+                        const isSelected = customModel === model.id
+                        const isHighlighted = index === modelHighlightIndex
+                        return (
+                          <StyledDropdownMenuItem
+                            key={model.id}
+                            onSelect={() => onCustomModelChange?.(model.id)}
+                            className={cn(
+                              "flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer",
+                              isHighlighted && "bg-foreground/[0.03]"
+                            )}
+                            onMouseEnter={() => setModelHighlightIndex(index)}
+                          >
+                            <div className="text-left">
+                              <div className="font-medium text-sm">{model.name}</div>
+                              <div className="text-xs text-muted-foreground">{model.description}</div>
+                            </div>
+                            {isSelected && (
+                              <Check className="h-4 w-4 text-foreground shrink-0 ml-3" />
+                            )}
+                          </StyledDropdownMenuItem>
+                        )
+                      })}
+                      {filteredModels.length === 0 && (
+                        <div className="px-2 py-3 text-sm text-muted-foreground text-center">No models found</div>
                       )}
-                    </StyledDropdownMenuItem>
+                    </>
                   )
-                })
+                })()
               ) : customModel ? (
                 /* Other custom providers: show static item */
                 <StyledDropdownMenuItem
