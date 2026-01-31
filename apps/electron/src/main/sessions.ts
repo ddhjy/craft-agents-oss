@@ -2858,6 +2858,22 @@ export class SessionManager {
       await this.setTodoState(sessionId, 'done')
     }
 
+    // 3.5. Auto-regenerate title after first AI response completes
+    //      The initial title is generated from user message only, but after AI responds
+    //      we have better context (AI has read attachments/references). Regenerate once.
+    if (reason === 'complete' && hasFinalMessage) {
+      const finalAssistantMessages = managed.messages.filter(
+        (m) => m.role === 'assistant' && !m.isIntermediate
+      )
+      // Only regenerate after the very first final assistant message
+      if (finalAssistantMessages.length === 1) {
+        sessionLog.info(`First AI response complete, auto-regenerating title for session ${sessionId}`)
+        this.refreshTitle(sessionId).catch((err) => {
+          sessionLog.warn(`Auto title regeneration failed for session ${sessionId}:`, err)
+        })
+      }
+    }
+
     // 4. Check queue and process or complete
     if (managed.messageQueue.length > 0) {
       // Has queued messages - process next
