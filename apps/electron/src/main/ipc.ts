@@ -2234,6 +2234,30 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     return result
   })
 
+  // ============================================================
+  // Path Rules (Automatic labels based on workingDirectory)
+  // ============================================================
+
+  // Get path rules for a workspace
+  ipcMain.handle(IPC_CHANNELS.PATH_RULES_GET, async (_event, workspaceId: string) => {
+    const workspace = getWorkspaceByNameOrId(workspaceId)
+    if (!workspace) throw new Error('Workspace not found')
+
+    const { loadPathRulesConfig } = await import('@craft-agent/shared/labels/path-rules')
+    return loadPathRulesConfig(workspace.rootPath)
+  })
+
+  // Save path rules for a workspace
+  ipcMain.handle(IPC_CHANNELS.PATH_RULES_SAVE, async (_event, workspaceId: string, config: import('@craft-agent/shared/labels/path-rules').PathRulesConfig) => {
+    const workspace = getWorkspaceByNameOrId(workspaceId)
+    if (!workspace) throw new Error('Workspace not found')
+
+    const { savePathRulesConfig } = await import('@craft-agent/shared/labels/path-rules')
+    savePathRulesConfig(workspace.rootPath, config)
+    // Broadcast labels changed since path rules affect label assignment
+    windowManager.broadcastToAll(IPC_CHANNELS.LABELS_CHANGED, workspaceId)
+  })
+
   // List views for a workspace (dynamic expression-based filters stored in views.json)
   ipcMain.handle(IPC_CHANNELS.VIEWS_LIST, async (_event, workspaceId: string) => {
     const workspace = getWorkspaceByNameOrId(workspaceId)

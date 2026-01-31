@@ -329,6 +329,12 @@ const api: ElectronAPI = {
     }
   },
 
+  // Path rules (automatic labels based on workingDirectory)
+  getPathRules: (workspaceId: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.PATH_RULES_GET, workspaceId),
+  savePathRules: (workspaceId: string, config: any) =>
+    ipcRenderer.invoke(IPC_CHANNELS.PATH_RULES_SAVE, workspaceId, config),
+
   // Views (dynamic, expression-based filters stored in views.json)
   listViews: (workspaceId: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.VIEWS_LIST, workspaceId),

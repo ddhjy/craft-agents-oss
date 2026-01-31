@@ -52,6 +52,7 @@ import { type ThinkingLevel, DEFAULT_THINKING_LEVEL } from '@craft-agent/shared/
 import { evaluateAutoLabels } from '@craft-agent/shared/labels/auto'
 import { listLabels } from '@craft-agent/shared/labels/storage'
 import { extractLabelId } from '@craft-agent/shared/labels'
+import { loadPathRulesConfig, evaluatePathRules, applyPathRuleMatches } from '@craft-agent/shared/labels/path-rules'
 
 /**
  * Sanitize message content for use as session title.
@@ -1487,6 +1488,21 @@ export class SessionManager {
       hidden: options?.hidden,
     }
 
+    // Apply path-based labels if workingDirectory is set
+    if (resolvedWorkingDir) {
+      const pathRulesConfig = loadPathRulesConfig(workspaceRootPath)
+      if (pathRulesConfig.rules.length > 0) {
+        const labelTree = listLabels(workspaceRootPath)
+        const matches = evaluatePathRules(resolvedWorkingDir, pathRulesConfig, labelTree)
+        const newLabels = applyPathRuleMatches(managed.labels, matches)
+        if (newLabels && newLabels !== managed.labels) {
+          managed.labels = newLabels
+          this.persistSession(managed)
+          sessionLog.info(`Applied path-based labels to session ${managed.id}:`, newLabels)
+        }
+      }
+    }
+
     this.sessions.set(storedSession.id, managed)
 
     return {
@@ -1499,6 +1515,7 @@ export class SessionManager {
       isFlagged: false,
       permissionMode: defaultPermissionMode,
       todoState: undefined,  // User-controlled, defaults to undefined (treated as 'todo')
+      labels: managed.labels,  // Include path-based labels
       workingDirectory: resolvedWorkingDir,
       model: managed.model,
       thinkingLevel: defaultThinkingLevel,
@@ -2316,6 +2333,23 @@ export class SessionManager {
       if (managed.agent) {
         managed.agent.updateWorkingDirectory(managed.workingDirectory)
       }
+
+      // Apply path-based labels for the new working directory
+      if (managed.workingDirectory) {
+        const pathRulesConfig = loadPathRulesConfig(managed.workspace.rootPath)
+        if (pathRulesConfig.rules.length > 0) {
+          const labelTree = listLabels(managed.workspace.rootPath)
+          const matches = evaluatePathRules(managed.workingDirectory, pathRulesConfig, labelTree)
+          const newLabels = applyPathRuleMatches(managed.labels, matches)
+          if (newLabels && newLabels !== managed.labels) {
+            managed.labels = newLabels
+            // Notify renderer of label changes
+            this.sendEvent({ type: 'labels_changed', sessionId, labels: newLabels }, managed.workspace.id)
+            sessionLog.info(`Applied path-based labels on workdir change for session ${managed.id}:`, newLabels)
+          }
+        }
+      }
+
       this.persistSession(managed)
       // Notify renderer of the working directory change
       this.sendEvent({ type: 'working_directory_changed', sessionId, workingDirectory: managed.workingDirectory }, managed.workspace.id)

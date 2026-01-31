@@ -681,6 +681,10 @@ export const IPC_CHANNELS = {
   LABELS_DELETE: 'labels:delete',
   LABELS_CHANGED: 'labels:changed',  // Broadcast event
 
+  // Path rules (automatic labels based on workingDirectory)
+  PATH_RULES_GET: 'pathRules:get',
+  PATH_RULES_SAVE: 'pathRules:save',
+
   // Views management (workspace-scoped, stored in views.json)
   VIEWS_LIST: 'views:list',
   VIEWS_SAVE: 'views:save',
@@ -958,6 +962,10 @@ export interface ElectronAPI {
   deleteLabel(workspaceId: string, labelId: string): Promise<{ stripped: number }>
   // Labels change listener (live updates when labels config changes)
   onLabelsChanged(callback: (workspaceId: string) => void): () => void
+
+  // Path rules (automatic labels based on workingDirectory)
+  getPathRules(workspaceId: string): Promise<import('@craft-agent/shared/labels/path-rules').PathRulesConfig>
+  savePathRules(workspaceId: string, config: import('@craft-agent/shared/labels/path-rules').PathRulesConfig): Promise<void>
 
   // Views (workspace-scoped, stored in views.json)
   listViews(workspaceId: string): Promise<import('@craft-agent/shared/views').ViewConfig[]>
