@@ -2249,8 +2249,11 @@ export class SessionManager {
     }
 
     // Get recent user messages (last 3) for context
+    // Exclude queued user messages (optimistic UI) to avoid generating a title from messages
+    // that haven't actually been processed yet.
+    const queuedUserMessageIds = new Set(managed.messageQueue.map((q) => q.messageId).filter(Boolean))
     const userMessages = managed.messages
-      .filter((m) => m.role === 'user')
+      .filter((m) => m.role === 'user' && !queuedUserMessageIds.has(m.id))
       .slice(-3)
       .map((m) => m.content)
 
@@ -2862,11 +2865,16 @@ export class SessionManager {
     //      The initial title is generated from user message only, but after AI responds
     //      we have better context (AI has read attachments/references). Regenerate once.
     if (reason === 'complete' && hasFinalMessage) {
-      const finalAssistantMessages = managed.messages.filter(
-        (m) => m.role === 'assistant' && !m.isIntermediate
-      )
-      // Only regenerate after the very first final assistant message
-      if (finalAssistantMessages.length === 1) {
+      // IMPORTANT:
+      // A single assistant "turn" can emit multiple final `text_complete` events (multi-block output),
+      // so counting final assistant messages is not a reliable "first response" detector.
+      // Instead, regenerate only after the first user turn completes (excluding queued user messages).
+      const queuedUserMessageIds = new Set(managed.messageQueue.map((q) => q.messageId).filter(Boolean))
+      const nonQueuedUserMessagesCount = managed.messages.filter(
+        (m) => m.role === 'user' && !queuedUserMessageIds.has(m.id)
+      ).length
+
+      if (nonQueuedUserMessagesCount === 1) {
         sessionLog.info(`First AI response complete, auto-regenerating title for session ${sessionId}`)
         this.refreshTitle(sessionId).catch((err) => {
           sessionLog.warn(`Auto title regeneration failed for session ${sessionId}:`, err)
