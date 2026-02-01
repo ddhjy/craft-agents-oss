@@ -123,7 +123,7 @@ bunnyagents://action/new-chat[?params]
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| `input` | 字符串（URL 编码） | 预填的消息内容 |
+| `input` | 字符串（URL 编码） | 预填的消息内容，支持 `{{clipboard}}` 占位符 |
 | `send` | `true` | 自动发送消息（需配合 `input` 使用） |
 | `name` | 字符串（URL 编码） | 会话名称 |
 | `mode` | `safe` / `ask` / `allow-all` | 权限模式 |
@@ -141,6 +141,12 @@ bunnyagents://action/new-chat
 
 # 创建聊天并预填内容
 bunnyagents://action/new-chat?input=Hello%20World
+
+# 创建聊天并使用剪贴板内容预填
+bunnyagents://action/new-chat?input={{clipboard}}
+
+# 创建聊天并发送剪贴板内容
+bunnyagents://action/new-chat?input={{clipboard}}&send=true
 
 # 创建聊天并立即发送消息
 bunnyagents://action/new-chat?input=Hello%20World&send=true
