@@ -49,7 +49,18 @@ bun run electron:dist:mac
 - 通过 Apple 公证
 - 可分发给外部用户
 
-### 3. 仅构建特定架构
+### 3. 快速构建（仅生成 .app，不打包 DMG）
+
+```bash
+CSC_IDENTITY_AUTO_DISCOVERY=false bun run electron:dist:mac:dir
+```
+
+**特点:**
+- 跳过 DMG/ZIP 打包步骤，直接生成 `.app` 目录
+- 构建速度更快，适合内部测试
+- 产物位置: `apps/electron/release/mac-arm64/Bunny.app` 或 `mac-x64/Bunny.app`
+
+### 4. 仅构建特定架构
 
 ```bash
 # 仅 Apple Silicon
