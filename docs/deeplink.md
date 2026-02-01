@@ -1,4 +1,4 @@
-# bunnyagents:// URL Scheme 使用文档
+# bunnyagents:// Deep Link 使用文档
 
 `bunnyagents://` 是 Craft Agents 应用的自定义 URL 协议，允许外部应用或脚本通过 URL 控制和导航应用。
 
