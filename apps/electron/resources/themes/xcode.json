@@ -1,0 +1,26 @@
+{
+  "name": "Xcode",
+  "description": "Apple's Xcode IDE default dark theme",
+  "author": "Apple Inc.",
+  "license": "Proprietary",
+  "source": "https://developer.apple.com/xcode/",
+  "supportedModes": ["dark"],
+  "shikiTheme": {
+    "light": "github-light",
+    "dark": "github-dark"
+  },
+  "background": "#1F1F24",
+  "foreground": "#dfdfe0",
+  "accent": "#FF7AB2",
+  "info": "#D0BF69",
+  "success": "#A0D07D",
+  "destructive": "#FC6A5D",
+  "dark": {
+    "background": "#1F1F24",
+    "foreground": "#dfdfe0",
+    "accent": "#FF7AB2",
+    "info": "#D0BF69",
+    "success": "#A0D07D",
+    "destructive": "#FC6A5D"
+  }
+}
