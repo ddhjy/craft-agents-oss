@@ -1400,7 +1400,7 @@ export function ResponseCard({
                     )}
                   >
                     <ExternalLink className={SIZE_CONFIG.iconSize} />
-                    <span>View as Markdown</span>
+                    <span>View</span>
                   </button>
                 )}
               </div>
