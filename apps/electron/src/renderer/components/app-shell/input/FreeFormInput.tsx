@@ -10,6 +10,7 @@ import {
   DatabaseZap,
   ChevronDown,
   Loader2,
+  Copy,
 } from 'lucide-react'
 import { Icon_Home, Icon_Folder } from '@craft-agent/ui'
 
@@ -1982,7 +1983,7 @@ function OpenInButton({ workingDirectory }: { workingDirectory?: string }) {
             }
           }}
         >
-          <span className="w-5" />
+          <Copy className="w-5 h-3.5 text-muted-foreground" />
           <span className="flex-1">Copy path</span>
           <span className="text-muted-foreground text-[12px]">⌘⇧C</span>
         </StyledDropdownMenuItem>
