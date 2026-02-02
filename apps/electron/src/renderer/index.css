@@ -444,8 +444,8 @@ html[data-font="inter"] {
 
   /* Scrollbar styling - hidden by default, visible on hover */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
   }
 
   ::-webkit-scrollbar-track {
@@ -453,17 +453,19 @@ html[data-font="inter"] {
   }
 
   ::-webkit-scrollbar-thumb {
-    background: transparent;
-    border-radius: 4px;
-    transition: background 0.2s ease;
+    background-color: transparent;
+    border-radius: 10px;
+    border: 3px solid transparent;
+    background-clip: content-box;
   }
 
+  *:hover > ::-webkit-scrollbar-thumb,
   *:hover::-webkit-scrollbar-thumb {
-    background: var(--border);
+    background-color: var(--border);
   }
 
-  *:hover::-webkit-scrollbar-thumb:hover {
-    background: var(--muted-foreground);
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted-foreground);
   }
 
   /* Focus ring styles - override Tailwind ring utilities */
