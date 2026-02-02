@@ -387,7 +387,7 @@ function SessionItem({
       {/* Wrapper for button + dropdown + context menu, group for hover state */}
       <ContextMenu modal={true} onOpenChange={setContextMenuOpen}>
         <ContextMenuTrigger asChild>
-          <div className="session-content relative group select-none pl-2 mr-2">
+          <div className="session-content relative group select-none pl-2 mr-3">
         {/* Todo State Icon - positioned absolutely, outside the button (only when statusEnabled) */}
         {statusEnabled && (
         <Popover modal={true} open={todoMenuOpen} onOpenChange={setTodoMenuOpen}>
