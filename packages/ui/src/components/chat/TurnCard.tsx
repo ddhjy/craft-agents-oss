@@ -1343,7 +1343,7 @@ export function ResponseCard({
 
           {/* Scrollable content area with subtle fade at edges (dark mode only) */}
           <div
-            className="pl-[22px] pr-[16px] py-3 text-sm overflow-y-auto"
+            className="pl-[22px] pr-[16px] py-3 text-sm overflow-y-auto [&::-webkit-scrollbar-track]:mt-8"
             style={{
               maxHeight: MAX_HEIGHT,
               // Subtle fade at top and bottom edges (16px) - only in dark mode for better contrast
