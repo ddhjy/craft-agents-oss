@@ -24,6 +24,7 @@ import {
   FolderOpen,
   HelpCircle,
   ExternalLink,
+  Store,
 } from "lucide-react"
 import { PanelRightRounded } from "../icons/PanelRightRounded"
 import { PanelLeftRounded } from "../icons/PanelLeftRounded"
@@ -2766,6 +2767,14 @@ function AppShellContent({
                         />
                       }
                       {...getEditConfig('add-skill', activeWorkspace.rootPath)}
+                    />
+                  )}
+                  {/* Skill Market button (only for skills mode) */}
+                  {isSkillsNavigation(navState) && (
+                    <HeaderIconButton
+                      icon={<Store className="h-4 w-4" />}
+                      tooltip="Skill Market"
+                      onClick={() => window.electronAPI.openUrl('https://skillsmp.com/zh')}
                     />
                   )}
                 </>
