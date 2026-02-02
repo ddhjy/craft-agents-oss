@@ -1,0 +1,26 @@
+{
+  "name": "Xcode Light",
+  "description": "Apple's Xcode IDE default light theme (Classic Light)",
+  "author": "Apple Inc.",
+  "license": "Proprietary",
+  "source": "https://developer.apple.com/xcode/",
+  "supportedModes": ["light"],
+  "shikiTheme": {
+    "light": "github-light",
+    "dark": "github-light"
+  },
+  "background": "#FFFFFF",
+  "foreground": "#000000",
+  "accent": "#881391",
+  "info": "#2B5DA7",
+  "success": "#177500",
+  "destructive": "#C41A16",
+  "light": {
+    "background": "#FFFFFF",
+    "foreground": "#000000",
+    "accent": "#881391",
+    "info": "#2B5DA7",
+    "success": "#177500",
+    "destructive": "#C41A16"
+  }
+}
