@@ -7,7 +7,7 @@
 
 import * as React from 'react'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { AlertCircle, Globe, Copy, RefreshCw, Link2Off, Info } from 'lucide-react'
+import { AlertCircle, Globe, Copy, RefreshCw, Link2Off, Info, ChevronDown, ExternalLink } from 'lucide-react'
 import { ChatDisplay, type ChatDisplayHandle } from '@/components/app-shell/ChatDisplay'
 import { PanelHeader } from '@/components/app-shell/PanelHeader'
 import { SessionMenu } from '@/components/app-shell/SessionMenu'
@@ -16,6 +16,9 @@ import { toast } from 'sonner'
 import { HeaderIconButton } from '@/components/ui/HeaderIconButton'
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { StyledDropdownMenuContent, StyledDropdownMenuItem, StyledDropdownMenuSeparator } from '@/components/ui/styled-dropdown'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@craft-agent/ui'
+import { cn } from '@/lib/utils'
+import type { AvailableApp } from '../../../shared/types'
 import { useAppShellContext, usePendingPermission, usePendingCredential, useSessionOptionsFor, useSession as useSessionData } from '@/context/AppShellContext'
 import { rendererPerf } from '@/lib/perf'
 import { routes } from '@/lib/navigate'
@@ -380,6 +383,19 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
     </DropdownMenu>
   ), [sharedUrl, handleShare, handleOpenInBrowser, handleCopyLink, handleUpdateShare, handleRevokeShare])
 
+  // Open In button for header - opens working directory in various apps
+  const openInButton = React.useMemo(() => (
+    <OpenInButton workingDirectory={workingDirectory} />
+  ), [workingDirectory])
+
+  // Combine header actions: OpenIn button (left) + Share button (right)
+  const headerActions = React.useMemo(() => (
+    <>
+      {openInButton}
+      {shareButton}
+    </>
+  ), [openInButton, shareButton])
+
   // Build title menu content for chat sessions using shared SessionMenu
   const sessionLabels = session?.labels ?? []
   const titleMenu = React.useMemo(() => (
@@ -445,7 +461,7 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
       return (
         <>
           <div className="h-full flex flex-col">
-            <PanelHeader  title={displayTitle} titleMenu={titleMenu} actions={shareButton} rightSidebarButton={rightSidebarButton} isRegeneratingTitle={isAsyncOperationOngoing} />
+            <PanelHeader  title={displayTitle} titleMenu={titleMenu} actions={headerActions} rightSidebarButton={rightSidebarButton} isRegeneratingTitle={isAsyncOperationOngoing} />
             <div className="flex-1 flex flex-col min-h-0">
               <ChatDisplay
                 ref={chatDisplayRef}
@@ -512,7 +528,7 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
   return (
     <>
       <div className="h-full flex flex-col">
-        <PanelHeader  title={displayTitle} titleMenu={titleMenu} actions={shareButton} rightSidebarButton={rightSidebarButton} isRegeneratingTitle={isAsyncOperationOngoing} />
+        <PanelHeader  title={displayTitle} titleMenu={titleMenu} actions={headerActions} rightSidebarButton={rightSidebarButton} isRegeneratingTitle={isAsyncOperationOngoing} />
         <div className="flex-1 flex flex-col min-h-0">
           <ChatDisplay
             ref={chatDisplayRef}
@@ -570,5 +586,123 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
     </>
   )
 })
+
+/**
+ * OpenInButton - Dropdown button to open working directory in various apps
+ */
+function OpenInButton({ workingDirectory }: { workingDirectory?: string }) {
+  const [isOpen, setIsOpen] = React.useState(false)
+  const [availableApps, setAvailableApps] = React.useState<AvailableApp[]>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  // Fetch available apps on mount (cached, don't refetch on every open)
+  React.useEffect(() => {
+    let cancelled = false
+
+    if (!workingDirectory) {
+      setAvailableApps([])
+      setIsLoading(false)
+      return
+    }
+
+    const promise = window.electronAPI?.getAvailableApps?.(workingDirectory)
+    if (!promise) {
+      setAvailableApps([])
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true)
+    promise
+      .then(apps => {
+        if (cancelled) return
+        setAvailableApps(apps || [])
+        setIsLoading(false)
+      })
+      .catch(() => {
+        if (cancelled) return
+        setAvailableApps([])
+        setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [workingDirectory])
+
+  const handleOpenWith = React.useCallback((appId: string) => {
+    if (workingDirectory) {
+      window.electronAPI?.openWithApp?.(workingDirectory, appId)
+      setIsOpen(false)
+    }
+  }, [workingDirectory])
+
+  // Handle keyboard shortcuts (1-9 for quick selection)
+  React.useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const key = e.key
+      if (key >= '1' && key <= '9') {
+        const index = parseInt(key) - 1
+        if (index < availableApps.length) {
+          e.preventDefault()
+          handleOpenWith(availableApps[index].id)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, availableApps, handleOpenWith])
+
+  if (!workingDirectory) return null
+
+  return (
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <HeaderIconButton
+              icon={<ExternalLink className="h-4 w-4" />}
+              className={cn(isOpen && "bg-foreground/5")}
+            />
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">Open folder in app</TooltipContent>
+      </Tooltip>
+      <StyledDropdownMenuContent side="bottom" align="end" sideOffset={8} className="min-w-[200px]">
+        {availableApps.map((app, index) => (
+          <StyledDropdownMenuItem
+            key={app.id}
+            onClick={() => handleOpenWith(app.id)}
+          >
+            <span className="w-5 text-muted-foreground text-[12px] tabular-nums">{index + 1}</span>
+            <span className="flex-1">{app.name}</span>
+          </StyledDropdownMenuItem>
+        ))}
+        {isLoading && (
+          <div className="px-3 py-2 text-sm text-muted-foreground">Loading...</div>
+        )}
+        {!isLoading && availableApps.length === 0 && (
+          <div className="px-3 py-2 text-sm text-muted-foreground">No apps found</div>
+        )}
+        <StyledDropdownMenuSeparator />
+        <StyledDropdownMenuItem
+          onClick={() => {
+            if (workingDirectory) {
+              navigator.clipboard.writeText(workingDirectory)
+              setIsOpen(false)
+            }
+          }}
+        >
+          <Copy className="w-5 h-3.5 text-muted-foreground" />
+          <span className="flex-1">Copy path</span>
+          <span className="text-muted-foreground text-[12px]">⌘⇧C</span>
+        </StyledDropdownMenuItem>
+      </StyledDropdownMenuContent>
+    </DropdownMenu>
+  )
+}
 
 export default ChatPage
