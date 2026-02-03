@@ -724,8 +724,8 @@ export const RichTextInput = React.forwardRef<RichTextInputHandle, RichTextInput
       return () => document.removeEventListener('selectionchange', handleSelectionChange)
     }, [])
 
-    // Show placeholder when input is empty (regardless of focus state)
-    const showPlaceholder = !value
+    // Show placeholder when input is empty and not focused
+    const showPlaceholder = !value && !isFocused
 
     // Normalize placeholder to array for RotatingPlaceholder
     const placeholderArray = React.useMemo(() => {
@@ -769,7 +769,7 @@ export const RichTextInput = React.forwardRef<RichTextInputHandle, RichTextInput
           aria-multiline="true"
           {...restProps}
         />
-        {/* Rotating placeholder overlay - visible when empty, even when focused */}
+        {/* Rotating placeholder overlay - visible when empty and not focused */}
         {showPlaceholder && (
           <RotatingPlaceholder
             placeholders={placeholderArray}
