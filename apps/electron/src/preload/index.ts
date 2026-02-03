@@ -47,6 +47,8 @@ const api: ElectronAPI = {
     return () => ipcRenderer.removeListener(IPC_CHANNELS.WINDOW_CLOSE_REQUESTED, handler)
   },
   setTrafficLightsVisible: (visible: boolean) => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_SET_TRAFFIC_LIGHTS, visible),
+  setAlwaysOnTop: (enabled: boolean) => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_SET_ALWAYS_ON_TOP, enabled),
+  getAlwaysOnTop: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_GET_ALWAYS_ON_TOP),
 
   // Event listeners
   onSessionEvent: (callback: (event: SessionEvent) => void) => {

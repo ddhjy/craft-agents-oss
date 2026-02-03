@@ -210,6 +210,16 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     windowManager.setTrafficLightsVisible(event.sender.id, visible)
   })
 
+  // Set window always on top (pin mode)
+  ipcMain.handle(IPC_CHANNELS.WINDOW_SET_ALWAYS_ON_TOP, (event, enabled: boolean) => {
+    windowManager.setAlwaysOnTop(event.sender.id, enabled)
+  })
+
+  // Get window always on top state
+  ipcMain.handle(IPC_CHANNELS.WINDOW_GET_ALWAYS_ON_TOP, (event) => {
+    return windowManager.getAlwaysOnTop(event.sender.id)
+  })
+
   // Switch workspace in current window (in-window switching)
   ipcMain.handle(IPC_CHANNELS.SWITCH_WORKSPACE, async (event, workspaceId: string) => {
     const end = perf.start('ipc.switchWorkspace', { workspaceId })

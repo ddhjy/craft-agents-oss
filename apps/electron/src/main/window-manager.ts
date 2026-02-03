@@ -512,4 +512,27 @@ export class WindowManager {
       }
     }
   }
+
+  /**
+   * Set window always on top (pin mode).
+   * When enabled, the window stays above all other windows.
+   */
+  setAlwaysOnTop(webContentsId: number, enabled: boolean): void {
+    const managed = this.windows.get(webContentsId)
+    if (managed && !managed.window.isDestroyed()) {
+      managed.window.setAlwaysOnTop(enabled, 'floating')
+      windowLog.info(`Window ${webContentsId} always on top: ${enabled}`)
+    }
+  }
+
+  /**
+   * Get the current always on top state of a window.
+   */
+  getAlwaysOnTop(webContentsId: number): boolean {
+    const managed = this.windows.get(webContentsId)
+    if (managed && !managed.window.isDestroyed()) {
+      return managed.window.isAlwaysOnTop()
+    }
+    return false
+  }
 }

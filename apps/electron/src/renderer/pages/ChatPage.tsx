@@ -7,7 +7,7 @@
 
 import * as React from 'react'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { AlertCircle, Globe, Copy, RefreshCw, Link2Off, Info, ChevronDown, FolderOpen } from 'lucide-react'
+import { AlertCircle, Globe, Copy, RefreshCw, Link2Off, Info, ChevronDown, FolderOpen, Pin } from 'lucide-react'
 import { ChatDisplay, type ChatDisplayHandle } from '@/components/app-shell/ChatDisplay'
 import { PanelHeader } from '@/components/app-shell/PanelHeader'
 import { SessionMenu } from '@/components/app-shell/SessionMenu'
@@ -108,6 +108,18 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
     const cleanup = window.electronAPI.onWindowFocusChange(setIsWindowFocused)
     return cleanup
   }, [])
+
+  // Track always-on-top (pin) state
+  const [isPinned, setIsPinned] = React.useState(false)
+  React.useEffect(() => {
+    window.electronAPI.getAlwaysOnTop().then(setIsPinned)
+  }, [])
+
+  const handleTogglePin = React.useCallback(() => {
+    const newPinned = !isPinned
+    setIsPinned(newPinned)
+    window.electronAPI.setAlwaysOnTop(newPinned)
+  }, [isPinned])
 
   // Track which session user is viewing (for unread state machine).
   // This tells main process user is looking at this session, so:
@@ -388,13 +400,24 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
     <OpenInButton workingDirectory={workingDirectory} />
   ), [workingDirectory])
 
-  // Combine header actions: OpenIn button (left) + Share button (right)
+  // Pin button for always-on-top mode
+  const pinButton = React.useMemo(() => (
+    <HeaderIconButton
+      icon={<Pin className={cn("h-4 w-4", isPinned && "fill-current")} />}
+      onClick={handleTogglePin}
+      tooltip={isPinned ? "Unpin window" : "Pin window on top"}
+      className={isPinned ? 'text-accent' : 'text-foreground'}
+    />
+  ), [isPinned, handleTogglePin])
+
+  // Combine header actions: OpenIn button + Pin button + Share button
   const headerActions = React.useMemo(() => (
     <>
       {openInButton}
+      {pinButton}
       {shareButton}
     </>
-  ), [openInButton, shareButton])
+  ), [openInButton, pinButton, shareButton])
 
   // Build title menu content for chat sessions using shared SessionMenu
   const sessionLabels = session?.labels ?? []

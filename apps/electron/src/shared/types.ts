@@ -557,6 +557,9 @@ export const IPC_CHANNELS = {
   WINDOW_CONFIRM_CLOSE: 'window:confirmClose',
   // Traffic light visibility (macOS only - hide when fullscreen overlays are open)
   WINDOW_SET_TRAFFIC_LIGHTS: 'window:setTrafficLights',
+  // Always on top (pin window)
+  WINDOW_SET_ALWAYS_ON_TOP: 'window:setAlwaysOnTop',
+  WINDOW_GET_ALWAYS_ON_TOP: 'window:getAlwaysOnTop',
 
   // Events from main to renderer
   SESSION_EVENT: 'session:event',
@@ -835,6 +838,10 @@ export interface ElectronAPI {
   onCloseRequested(callback: () => void): () => void
   /** Show/hide macOS traffic light buttons (for fullscreen overlays) */
   setTrafficLightsVisible(visible: boolean): Promise<void>
+  /** Set window always on top (pin mode) */
+  setAlwaysOnTop(enabled: boolean): Promise<void>
+  /** Get current always on top state */
+  getAlwaysOnTop(): Promise<boolean>
 
   // Event listeners
   onSessionEvent(callback: (event: SessionEvent) => void): () => void
