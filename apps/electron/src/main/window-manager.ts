@@ -50,9 +50,15 @@ export interface CreateWindowOptions {
   restoreUrl?: string
 }
 
+type CloseIntent = 'shortcut' | 'unknown'
+
+const CLOSE_SHORTCUT_WINDOW_MS = 1000
+
 export class WindowManager {
   private windows: Map<number, ManagedWindow> = new Map()  // webContents.id → ManagedWindow
   private focusedModeWindows: Set<number> = new Set()  // webContents.id of windows in focused mode
+  private closeShortcutTimestamps: Map<number, number> = new Map()  // webContents.id → last Cmd+W timestamp
+  private pendingCloseIntents: Map<number, CloseIntent> = new Map()  // webContents.id → close intent for current request
 
   private async readAlwaysOnTop(window: BrowserWindow, expected: boolean): Promise<boolean> {
     const immediate = window.isAlwaysOnTop()
@@ -79,6 +85,28 @@ export class WindowManager {
     }
 
     return null
+  }
+
+  private recordCloseShortcut(webContentsId: number): void {
+    this.closeShortcutTimestamps.set(webContentsId, Date.now())
+  }
+
+  private resolveCloseIntent(webContentsId: number): CloseIntent {
+    const lastShortcutAt = this.closeShortcutTimestamps.get(webContentsId)
+    this.closeShortcutTimestamps.delete(webContentsId)
+    if (!lastShortcutAt) return 'unknown'
+    const delta = Date.now() - lastShortcutAt
+    return delta <= CLOSE_SHORTCUT_WINDOW_MS ? 'shortcut' : 'unknown'
+  }
+
+  consumeCloseIntent(webContentsId: number): CloseIntent {
+    const intent = this.pendingCloseIntents.get(webContentsId) ?? 'unknown'
+    this.pendingCloseIntents.delete(webContentsId)
+    return intent
+  }
+
+  isFocusedModeWindow(webContentsId: number): boolean {
+    return this.focusedModeWindows.has(webContentsId)
   }
 
   /**
@@ -279,6 +307,17 @@ export class WindowManager {
       this.focusedModeWindows.add(webContentsId)
     }
 
+    // Track Cmd+W to distinguish shortcut-initiated closes on macOS
+    if (process.platform === 'darwin') {
+      window.webContents.on('before-input-event', (_event, input) => {
+        if (input.type !== 'keyDown') return
+        const key = typeof input.key === 'string' ? input.key.toLowerCase() : ''
+        if (input.meta && !input.control && !input.alt && !input.shift && (key === 'w' || input.code === 'KeyW')) {
+          this.recordCloseShortcut(webContentsId)
+        }
+      })
+    }
+
     // Listen for system theme changes and notify this window's renderer
     const themeHandler = () => {
       // Check mainFrame - it becomes null when render frame is disposed
@@ -306,6 +345,7 @@ export class WindowManager {
       // Check if renderer is ready (mainFrame exists) - if not, allow close directly
       if (!window.webContents.isDestroyed() && window.webContents.mainFrame) {
         event.preventDefault()
+        this.pendingCloseIntents.set(webContentsId, this.resolveCloseIntent(webContentsId))
         // Send close request to renderer - it will either close a modal or confirm close
         window.webContents.send(IPC_CHANNELS.WINDOW_CLOSE_REQUESTED)
       }
@@ -317,6 +357,8 @@ export class WindowManager {
       nativeTheme.removeListener('updated', themeHandler)
       this.windows.delete(webContentsId)
       this.focusedModeWindows.delete(webContentsId)
+      this.closeShortcutTimestamps.delete(webContentsId)
+      this.pendingCloseIntents.delete(webContentsId)
       windowLog.info(`Window closed for workspace ${workspaceId}`)
     })
 

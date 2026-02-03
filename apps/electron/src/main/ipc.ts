@@ -199,15 +199,22 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     windowManager.closeWindow(event.sender.id)
   })
 
-  // Confirm close - on macOS, hide the app instead of closing windows.
-  // On other platforms, force close the window.
+  // Confirm close - on macOS, hide the app only for Cmd+W on main window.
+  // Otherwise (or on other platforms), force close the window.
   // Called by renderer when it has no modals to close and wants to proceed.
   ipcMain.handle(IPC_CHANNELS.WINDOW_CONFIRM_CLOSE, (event) => {
+    const webContentsId = event.sender.id
     if (process.platform === 'darwin') {
-      app.hide()
-    } else {
-      windowManager.forceCloseWindow(event.sender.id)
+      const closeIntent = windowManager.consumeCloseIntent(webContentsId)
+      const isMainWindow = !windowManager.isFocusedModeWindow(webContentsId)
+      if (closeIntent === 'shortcut' && isMainWindow) {
+        app.hide()
+        return
+      }
+      windowManager.forceCloseWindow(webContentsId)
+      return
     }
+    windowManager.forceCloseWindow(webContentsId)
   })
 
   // Show/hide macOS traffic light buttons (for fullscreen overlays)
