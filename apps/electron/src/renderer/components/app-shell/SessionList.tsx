@@ -380,7 +380,7 @@ function SessionItem({
     >
       {/* Separator - only show if not first in group */}
       {!isFirstInGroup && (
-        <div className="session-separator pl-12 pr-4">
+        <div className="session-separator px-4">
           <Separator />
         </div>
       )}
