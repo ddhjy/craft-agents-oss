@@ -207,7 +207,8 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     if (process.platform === 'darwin') {
       const closeIntent = windowManager.consumeCloseIntent(webContentsId)
       const isMainWindow = !windowManager.isFocusedModeWindow(webContentsId)
-      if (closeIntent === 'shortcut' && isMainWindow) {
+      const isLastMainWindow = isMainWindow && windowManager.getMainWindowCount() <= 1
+      if (closeIntent === 'shortcut' && isLastMainWindow) {
         app.hide()
         return
       }

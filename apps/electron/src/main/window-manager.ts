@@ -109,6 +109,16 @@ export class WindowManager {
     return this.focusedModeWindows.has(webContentsId)
   }
 
+  getMainWindowCount(): number {
+    let count = 0
+    for (const managed of this.getAllWindows()) {
+      if (!this.focusedModeWindows.has(managed.window.webContents.id)) {
+        count += 1
+      }
+    }
+    return count
+  }
+
   /**
    * Create a new window for a workspace
    * @param options - Window creation options
