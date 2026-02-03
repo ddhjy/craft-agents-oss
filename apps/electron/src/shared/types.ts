@@ -839,7 +839,7 @@ export interface ElectronAPI {
   /** Show/hide macOS traffic light buttons (for fullscreen overlays) */
   setTrafficLightsVisible(visible: boolean): Promise<void>
   /** Set window always on top (pin mode) */
-  setAlwaysOnTop(enabled: boolean): Promise<void>
+  setAlwaysOnTop(enabled: boolean): Promise<boolean>
   /** Get current always on top state */
   getAlwaysOnTop(): Promise<boolean>
 

@@ -111,15 +111,45 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
 
   // Track always-on-top (pin) state
   const [isPinned, setIsPinned] = React.useState(false)
+  const pinRequestIdRef = React.useRef(0)
   React.useEffect(() => {
     window.electronAPI.getAlwaysOnTop().then(setIsPinned)
   }, [])
 
   const handleTogglePin = React.useCallback(() => {
-    const newPinned = !isPinned
-    setIsPinned(newPinned)
-    window.electronAPI.setAlwaysOnTop(newPinned)
-  }, [isPinned])
+    setIsPinned((prev) => {
+      const next = !prev
+      const requestId = ++pinRequestIdRef.current
+      window.electronAPI.setAlwaysOnTop(next)
+        .then((actual) => {
+          if (pinRequestIdRef.current !== requestId) return
+          if (actual === next) {
+            setIsPinned(actual)
+            return
+          }
+          setTimeout(() => {
+            if (pinRequestIdRef.current !== requestId) return
+            window.electronAPI.getAlwaysOnTop()
+              .then((state) => {
+                if (pinRequestIdRef.current === requestId) {
+                  setIsPinned(state)
+                }
+              })
+              .catch(() => {
+                if (pinRequestIdRef.current === requestId) {
+                  setIsPinned(prev)
+                }
+              })
+          }, 120)
+        })
+        .catch(() => {
+          if (pinRequestIdRef.current === requestId) {
+            setIsPinned(prev)
+          }
+        })
+      return next
+    })
+  }, [])
 
   // Track which session user is viewing (for unread state machine).
   // This tells main process user is looking at this session, so:

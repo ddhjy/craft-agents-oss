@@ -1,4 +1,4 @@
-import { BrowserWindow, shell, nativeTheme, Menu, app } from 'electron'
+import { BrowserWindow, shell, nativeTheme, Menu, app, webContents } from 'electron'
 import { windowLog } from './logger'
 import { join } from 'path'
 import { existsSync } from 'fs'
@@ -53,6 +53,33 @@ export interface CreateWindowOptions {
 export class WindowManager {
   private windows: Map<number, ManagedWindow> = new Map()  // webContents.id → ManagedWindow
   private focusedModeWindows: Set<number> = new Set()  // webContents.id of windows in focused mode
+
+  private async readAlwaysOnTop(window: BrowserWindow, expected: boolean): Promise<boolean> {
+    const immediate = window.isAlwaysOnTop()
+    if (immediate === expected) return immediate
+
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 80)
+    })
+    return window.isAlwaysOnTop()
+  }
+
+  private resolveWindow(webContentsId: number): BrowserWindow | null {
+    const managed = this.windows.get(webContentsId)
+    if (managed && !managed.window.isDestroyed()) {
+      return managed.window
+    }
+
+    const contents = webContents.fromId(webContentsId)
+    if (!contents) return null
+
+    const window = BrowserWindow.fromWebContents(contents)
+    if (window && !window.isDestroyed()) {
+      return window
+    }
+
+    return null
+  }
 
   /**
    * Create a new window for a workspace
@@ -517,22 +544,37 @@ export class WindowManager {
    * Set window always on top (pin mode).
    * When enabled, the window stays above all other windows.
    */
-  setAlwaysOnTop(webContentsId: number, enabled: boolean): void {
-    const managed = this.windows.get(webContentsId)
-    if (managed && !managed.window.isDestroyed()) {
-      managed.window.setAlwaysOnTop(enabled, 'floating')
-      windowLog.info(`Window ${webContentsId} always on top: ${enabled}`)
+  async setAlwaysOnTop(webContentsId: number, enabled: boolean): Promise<boolean> {
+    const window = this.resolveWindow(webContentsId)
+    if (!window) {
+      windowLog.warn(`Cannot set always on top for unknown window ${webContentsId}`)
+      return false
     }
+
+    if (process.platform === 'darwin') {
+      if (enabled) {
+        window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+      } else {
+        window.setVisibleOnAllWorkspaces(false)
+      }
+      window.setAlwaysOnTop(enabled, 'floating')
+      if (enabled) {
+        window.moveTop()
+      }
+    } else {
+      window.setAlwaysOnTop(enabled)
+    }
+
+    const actual = await this.readAlwaysOnTop(window, enabled)
+    windowLog.info(`Window ${webContentsId} always on top: ${actual}`)
+    return actual
   }
 
   /**
    * Get the current always on top state of a window.
    */
   getAlwaysOnTop(webContentsId: number): boolean {
-    const managed = this.windows.get(webContentsId)
-    if (managed && !managed.window.isDestroyed()) {
-      return managed.window.isAlwaysOnTop()
-    }
-    return false
+    const window = this.resolveWindow(webContentsId)
+    return window ? window.isAlwaysOnTop() : false
   }
 }

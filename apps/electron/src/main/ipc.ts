@@ -212,7 +212,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
 
   // Set window always on top (pin mode)
   ipcMain.handle(IPC_CHANNELS.WINDOW_SET_ALWAYS_ON_TOP, (event, enabled: boolean) => {
-    windowManager.setAlwaysOnTop(event.sender.id, enabled)
+    return windowManager.setAlwaysOnTop(event.sender.id, enabled)
   })
 
   // Get window always on top state
