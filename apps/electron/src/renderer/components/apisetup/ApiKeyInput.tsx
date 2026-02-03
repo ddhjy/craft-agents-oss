@@ -66,8 +66,8 @@ const PRESETS: Preset[] = [
 ]
 
 export const IDEA_MODELS = [
-  { id: 'gemini-3-flash', name: 'Gemini 3 Flash', description: 'Default' },
-  { id: 'gemini-3-pro', name: 'Gemini 3 Pro', description: 'High quality' },
+  { id: 'gemini-3-flash-priority', name: 'Gemini 3 Flash', description: 'Default' },
+  { id: 'gemini-3-pro-priority', name: 'Gemini 3 Pro', description: 'High quality' },
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'Stable' },
   { id: 'gpt-5', name: 'GPT-5', description: 'OpenAI latest' },
   { id: 'gpt-5-high', name: 'GPT-5 High', description: 'Higher quality' },
@@ -94,7 +94,7 @@ export const IDEA_MODELS = [
   { id: 'doubao-seed-code', name: 'Doubao Seed Code', description: 'Code optimized' },
   { id: 'doubao-1.5-pro-256k', name: 'Doubao 1.5 Pro 256K', description: 'Long context' },
   { id: 'glm-4.6', name: 'GLM 4.6', description: 'Zhipu AI' },
-  { id: 'ac/gemini-3-flash', name: 'AC Gemini 3 Flash', description: 'AC region' },
+  { id: 'glm-4.7', name: 'GLM 4.7', description: 'Zhipu AI' },
 ]
 
 function getPresetForUrl(url: string): PresetKey {
@@ -129,7 +129,7 @@ export function ApiKeyInput({
     if (preset.key === 'ollama') {
       setCustomModel('qwen3-coder')
     } else if (preset.key === 'idea') {
-      setCustomModel(IDEA_MODELS[0].id) // Default to first model (gemini-3-flash)
+      setCustomModel(IDEA_MODELS[0].id) // Default to first model (gemini-3-flash-priority)
       setApiKey(IDEA_API_KEY) // Auto-fill hardcoded IDEA API key
     } else {
       setCustomModel('')

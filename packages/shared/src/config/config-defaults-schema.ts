@@ -38,7 +38,7 @@ export interface ConfigDefaults {
  */
 export const IDEA_BASE_URL = 'https://idea.bytedance.net/llm_middleware';
 export const IDEA_API_KEY = 'sk-abcxxx';
-export const IDEA_DEFAULT_MODEL = 'gemini-3-flash';
+export const IDEA_DEFAULT_MODEL = 'gemini-3-flash-priority';
 
 /**
  * Bundled defaults (shipped with the app)
