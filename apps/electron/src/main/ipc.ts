@@ -12,7 +12,7 @@ import { registerOnboardingHandlers } from './onboarding'
 import { IPC_CHANNELS, type FileAttachment, type StoredAttachment, type AuthType, type ApiSetupInfo, type SendMessageOptions, type AvailableApp } from '../shared/types'
 import { readFileAttachment, perf, validateImageForClaudeAPI, IMAGE_LIMITS } from '@craft-agent/shared/utils'
 import { getAuthType, setAuthType, getPreferencesPath, getCustomModel, setCustomModel, getModel, setModel, getSessionDraft, setSessionDraft, deleteSessionDraft, getAllSessionDrafts, getWorkspaceByNameOrId, addWorkspace, setActiveWorkspace, getAnthropicBaseUrl, setAnthropicBaseUrl, loadStoredConfig, saveConfig, type Workspace, SUMMARIZATION_MODEL } from '@craft-agent/shared/config'
-import { getSessionAttachmentsPath } from '@craft-agent/shared/sessions'
+import { getSessionAttachmentsPath, validateSessionId } from '@craft-agent/shared/sessions'
 import { loadWorkspaceSources, getSourcesBySlugs, type LoadedSource } from '@craft-agent/shared/sources'
 import { isValidThinkingLevel } from '@craft-agent/shared/agent/thinking-levels'
 import { getCredentialManager } from '@craft-agent/shared/credentials'
@@ -214,6 +214,9 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
   ipcMain.handle(IPC_CHANNELS.SWITCH_WORKSPACE, async (event, workspaceId: string) => {
     const end = perf.start('ipc.switchWorkspace', { workspaceId })
 
+    // Get the old workspace ID before updating
+    const oldWorkspaceId = windowManager.getWorkspaceForWindow(event.sender.id)
+
     // Update the window's workspace mapping
     const updated = windowManager.updateWindowWorkspace(event.sender.id, workspaceId)
 
@@ -224,6 +227,15 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       if (win) {
         windowManager.registerWindow(win, workspaceId)
         windowLog.info(`Re-registered window ${event.sender.id} for workspace ${workspaceId}`)
+      }
+    }
+
+    // Clear activeViewingSession for old workspace if no other windows are viewing it
+    // This ensures read/unread state is correct after workspace switch
+    if (oldWorkspaceId && oldWorkspaceId !== workspaceId) {
+      const otherWindows = windowManager.getAllWindowsForWorkspace(oldWorkspaceId)
+      if (otherWindows.length === 0) {
+        sessionManager.clearActiveViewingSession(oldWorkspaceId)
       }
     }
 
@@ -556,6 +568,10 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
         throw new Error(`Workspace not found: ${workspaceId}`)
       }
       const workspaceRootPath = workspace.rootPath
+
+      // SECURITY: Validate sessionId to prevent path traversal attacks
+      // This must happen before using sessionId in any file path operations
+      validateSessionId(sessionId)
 
       // Create attachments directory if it doesn't exist
       const attachmentsDir = getSessionAttachmentsPath(workspaceRootPath, sessionId)
@@ -1374,6 +1390,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       if (authType === 'api_key') {
         await manager.setApiKey(credential)
       } else if (authType === 'oauth_token') {
+        // Save the access token (refresh token and expiry are managed by the OAuth flow)
         await manager.setClaudeOAuth(credential)
         ipcLog.info('Saved Claude OAuth access token')
       }
@@ -2520,6 +2537,50 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
         managed.window.webContents.mainFrame &&
         managed.window.webContents.id !== senderId) {
         managed.window.webContents.send(IPC_CHANNELS.THEME_PREFERENCES_CHANGED, preferences)
+      }
+    }
+  })
+
+  // Workspace-level theme overrides
+  ipcMain.handle(IPC_CHANNELS.THEME_GET_WORKSPACE_COLOR_THEME, async (_event, workspaceId: string) => {
+    const { getWorkspaces } = await import('@craft-agent/shared/config/storage')
+    const { getWorkspaceColorTheme } = await import('@craft-agent/shared/workspaces/storage')
+    const workspaces = getWorkspaces()
+    const workspace = workspaces.find(w => w.id === workspaceId)
+    if (!workspace) return null
+    return getWorkspaceColorTheme(workspace.rootPath) ?? null
+  })
+
+  ipcMain.handle(IPC_CHANNELS.THEME_SET_WORKSPACE_COLOR_THEME, async (_event, workspaceId: string, themeId: string | null) => {
+    const { getWorkspaces } = await import('@craft-agent/shared/config/storage')
+    const { setWorkspaceColorTheme } = await import('@craft-agent/shared/workspaces/storage')
+    const workspaces = getWorkspaces()
+    const workspace = workspaces.find(w => w.id === workspaceId)
+    if (!workspace) return
+    setWorkspaceColorTheme(workspace.rootPath, themeId ?? undefined)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.THEME_GET_ALL_WORKSPACE_THEMES, async () => {
+    const { getWorkspaces } = await import('@craft-agent/shared/config/storage')
+    const { getWorkspaceColorTheme } = await import('@craft-agent/shared/workspaces/storage')
+    const workspaces = getWorkspaces()
+    const themes: Record<string, string | undefined> = {}
+    for (const ws of workspaces) {
+      themes[ws.id] = getWorkspaceColorTheme(ws.rootPath)
+    }
+    return themes
+  })
+
+  // Broadcast workspace theme change to all other windows (for cross-window sync)
+  ipcMain.handle(IPC_CHANNELS.THEME_BROADCAST_WORKSPACE_THEME, async (event, workspaceId: string, themeId: string | null) => {
+    const senderId = event.sender.id
+    // Broadcast to all windows except the sender
+    for (const managed of windowManager.getAllWindows()) {
+      if (!managed.window.isDestroyed() &&
+          !managed.window.webContents.isDestroyed() &&
+          managed.window.webContents.mainFrame &&
+          managed.window.webContents.id !== senderId) {
+        managed.window.webContents.send(IPC_CHANNELS.THEME_WORKSPACE_THEME_CHANGED, { workspaceId, themeId })
       }
     }
   })

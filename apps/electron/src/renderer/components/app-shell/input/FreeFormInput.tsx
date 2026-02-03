@@ -52,7 +52,7 @@ import {
 } from '@/components/ui/styled-dropdown'
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
-import { PATH_SEP, getPathBasename } from '@/lib/platform'
+import { isMac, PATH_SEP, getPathBasename } from '@/lib/platform'
 import { applySmartTypography } from '@/lib/smart-typography'
 import { AttachmentPreview } from '../AttachmentPreview'
 import { MODELS, getModelShortName, getModelContextWindow, isClaudeModel } from '@config/models'
@@ -82,6 +82,9 @@ function formatTokenCount(tokens: number): string {
   return tokens.toString()
 }
 
+/** Platform-specific modifier key for keyboard shortcuts */
+const cmdKey = isMac ? '⌘' : 'Ctrl'
+
 /** Default rotating placeholders for onboarding/empty state */
 const DEFAULT_PLACEHOLDERS = [
   'What would you like to work on?',
@@ -89,6 +92,8 @@ const DEFAULT_PLACEHOLDERS = [
   'Type @ to mention files, folders, or skills',
   'Type # to apply labels to this conversation',
   'Press Shift + Return to add a new line',
+  `Press ${cmdKey} + B to toggle the sidebar`,
+  `Press ${cmdKey} + . for focus mode`,
 ]
 
 /** Fisher-Yates shuffle — returns a new array in random order */

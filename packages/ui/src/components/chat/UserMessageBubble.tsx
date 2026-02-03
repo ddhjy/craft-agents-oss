@@ -435,7 +435,7 @@ export function UserMessageBubble({
       <div
         className={cn(
           "max-w-[80%] bg-foreground/5 rounded-[16px] break-words min-w-0 select-text [&_p]:m-0",
-          compactMode ? "px-3 py-2" : "px-5 py-3.5",
+          compactMode ? "px-4 py-2" : "px-5 py-3.5",
           isPending && "animate-shimmer"
         )}
       >

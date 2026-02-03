@@ -60,6 +60,7 @@ import { inferGoogleServiceFromUrl, inferSlackServiceFromUrl, inferMicrosoftServ
 import { buildAuthorizationHeader } from '../sources/api-tools.ts';
 import { DOC_REFS } from '../docs/index.ts';
 import { renderMermaid } from '@craft-agent/mermaid';
+import { createLLMTool } from './llm-tool.ts';
 
 // ============================================================
 // Session-Scoped Tool Callbacks
@@ -106,6 +107,8 @@ export interface CredentialAuthRequest extends BaseAuthRequest {
   headerName?: string;
   /** Source URL/domain for password manager credential matching (1Password, etc.) */
   sourceUrl?: string;
+  /** For basic auth: whether password is required. Default true for backward compatibility. */
+  passwordRequired?: boolean;
 }
 
 /**
@@ -1437,6 +1440,47 @@ After successful authentication, the tokens are stored and the source is marked 
           };
         }
 
+        // Check if Google OAuth credentials are configured (in source config or env vars)
+        const api = source.api;
+        if (!isGoogleOAuthConfigured(api?.googleOAuthClientId, api?.googleOAuthClientSecret)) {
+          return {
+            content: [{
+              type: 'text' as const,
+              text: `Google OAuth credentials not configured for source '${args.sourceSlug}'.
+
+To authenticate with Google services, you need to provide your own OAuth credentials.
+
+**Option 1: Add credentials to source config**
+Edit the source's config.json and add:
+\`\`\`json
+{
+  "api": {
+    "googleOAuthClientId": "YOUR_CLIENT_ID.apps.googleusercontent.com",
+    "googleOAuthClientSecret": "YOUR_CLIENT_SECRET"
+  }
+}
+\`\`\`
+
+**Option 2: Set environment variables**
+\`\`\`bash
+export GOOGLE_OAUTH_CLIENT_ID="YOUR_CLIENT_ID.apps.googleusercontent.com"
+export GOOGLE_OAUTH_CLIENT_SECRET="YOUR_CLIENT_SECRET"
+\`\`\`
+
+**How to get credentials:**
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a project (or select existing)
+3. Enable the required API (Gmail API, Calendar API, etc.)
+4. Go to "APIs & Services" → "Credentials"
+5. Create OAuth 2.0 Client ID (Desktop app type)
+6. Copy the Client ID and Client Secret
+
+See the source's guide.md for detailed instructions.`,
+            }],
+            isError: true,
+          };
+        }
+
         // Check if source has valid credentials (not just isAuthenticated flag)
         const hasValidToken = await verifySourceHasValidToken(workspaceRootPath, source, args.sourceSlug);
         if (hasValidToken) {
@@ -1454,7 +1498,6 @@ After successful authentication, the tokens are stored and the source is marked 
 
         // Determine service from config for new pattern
         let service: GoogleService | undefined;
-        const api = source.api;
 
         if (api?.googleService) {
           service = api.googleService;
@@ -1867,9 +1910,21 @@ source_credential_prompt({
       }).optional().describe('Custom field labels'),
       description: z.string().optional().describe('Description shown to user'),
       hint: z.string().optional().describe('Hint about where to find credentials'),
+      passwordRequired: z.boolean().optional().describe('For basic auth: whether password field is required (default: true)'),
     },
     async (args) => {
       debug('[source_credential_prompt] Requesting credentials:', args.sourceSlug, args.mode);
+
+      // Validate that passwordRequired only applies to basic auth
+      if (args.passwordRequired !== undefined && args.mode !== 'basic') {
+        return {
+          content: [{
+            type: 'text' as const,
+            text: `Error: passwordRequired parameter only applies to basic auth mode. You specified mode="${args.mode}" with passwordRequired=${args.passwordRequired}.`,
+          }],
+          isError: true,
+        };
+      }
 
       try {
         // Load source to get name and validate
@@ -1911,6 +1966,7 @@ source_credential_prompt({
           headerName: source.api?.headerName,
           // Pass source URL so password managers (1Password) can match stored credentials by domain
           sourceUrl: source.api?.baseUrl || source.mcp?.url,
+          passwordRequired: args.passwordRequired,
         };
 
         // Trigger auth request - this will cause the session manager to forceAbort
@@ -2040,6 +2096,8 @@ export function getSessionScopedTools(sessionId: string, workspaceRootPath: stri
         createSlackOAuthTriggerTool(sessionId, workspaceRootPath),
         createMicrosoftOAuthTriggerTool(sessionId, workspaceRootPath),
         createCredentialPromptTool(sessionId, workspaceRootPath),
+        // LLM tool - invoke secondary Claude calls for subtasks
+        createLLMTool({ sessionId }),
       ],
     });
     sessionScopedToolsCache.set(cacheKey, cached);

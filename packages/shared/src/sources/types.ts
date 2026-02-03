@@ -255,6 +255,9 @@ export interface ApiSourceConfig {
   // Google OAuth fields (used when provider is 'google')
   googleService?: GoogleService; // Predefined service for scope selection
   googleScopes?: string[]; // Custom scopes (overrides googleService)
+  // User-provided OAuth credentials (for OSS users who create their own Google Cloud project)
+  googleOAuthClientId?: string; // User's Google OAuth Client ID
+  googleOAuthClientSecret?: string; // User's Google OAuth Client Secret
 
   // Slack OAuth fields (used when provider is 'slack')
   // Uses user_scope for user authentication (posts as the user, not a bot)
@@ -304,9 +307,9 @@ export interface FolderSourceConfig {
   api?: ApiSourceConfig;
   local?: LocalSourceConfig;
 
-  // Icon: emoji or URL (auto-downloaded to icon.* file)
-  // Local icon files (icon.svg, icon.png) are auto-discovered
-  // Priority: local file > URL (downloaded) > emoji
+  // Icon: emoji or URL
+  // Config is the source of truth. Local icon files are auto-discovered only when icon is undefined.
+  // Priority: emoji > URL > local file (auto-discovered)
   icon?: string;
 
   // Short description for agent context (e.g., "Issue tracking, bugs, tasks, sprints")
