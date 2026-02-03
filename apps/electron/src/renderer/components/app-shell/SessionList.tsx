@@ -473,6 +473,19 @@ function SessionItem({
                   New
                 </span>
               )}
+              {/* Timestamp — placed at the left so it's always visible even without badges */}
+              {item.lastMessageAt && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="shrink-0 text-[11px] text-foreground/40 whitespace-nowrap cursor-default">
+                      {formatDistanceToNowStrict(new Date(item.lastMessageAt), { locale: shortTimeLocale as Locale })}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" sideOffset={4}>
+                    {formatDistanceToNow(new Date(item.lastMessageAt), { addSuffix: true })}
+                  </TooltipContent>
+                </Tooltip>
+              )}
 
               {/* Scrollable badges container — horizontal scroll with hidden scrollbar,
                   right-edge gradient mask to hint at overflow */}
@@ -488,18 +501,6 @@ function SessionItem({
                 {item.lastMessageRole === 'plan' && (
                   <span className="shrink-0 h-[18px] px-1.5 text-[10px] font-medium rounded bg-success/10 text-success flex items-center whitespace-nowrap">
                     Plan
-                  </span>
-                )}
-                {permissionMode && (
-                  <span
-                    className={cn(
-                      "shrink-0 h-[18px] px-1.5 text-[10px] font-medium rounded flex items-center whitespace-nowrap",
-                      permissionMode === 'safe' && "bg-foreground/5 text-foreground/60",
-                      permissionMode === 'ask' && "bg-info/10 text-info",
-                      permissionMode === 'allow-all' && "bg-accent/10 text-accent"
-                    )}
-                  >
-                    {PERMISSION_MODE_CONFIG[permissionMode].shortName}
                   </span>
                 )}
                 {/* Label badges — each badge opens its own LabelValuePopover for
@@ -621,20 +622,6 @@ function SessionItem({
                   </DropdownMenu>
                 )}
               </div>
-              {/* Timestamp — outside stacking container so it never overlaps badges.
-                  shrink-0 keeps it fixed-width; the badges container clips instead. */}
-              {item.lastMessageAt && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="shrink-0 text-[11px] text-foreground/40 whitespace-nowrap cursor-default">
-                      {formatDistanceToNowStrict(new Date(item.lastMessageAt), { locale: shortTimeLocale as Locale })}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={4}>
-                    {formatDistanceToNow(new Date(item.lastMessageAt), { addSuffix: true })}
-                  </TooltipContent>
-                </Tooltip>
-              )}
             </div>
           </div>
         </button>
