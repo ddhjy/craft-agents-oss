@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Loader2,
   Copy,
+  GitBranch,
 } from 'lucide-react'
 import { Icon_Home, Icon_Folder } from '@craft-agent/ui'
 
@@ -1509,6 +1510,11 @@ export function FreeFormInput({
           {workingDirectory && (
             <OpenInButton workingDirectory={workingDirectory} />
           )}
+
+          {/* 5. Git Branch Badge - shows current git branch */}
+          {workingDirectory && (
+            <GitBranchBadge workingDirectory={workingDirectory} />
+          )}
           </div>
           )}
 
@@ -2208,5 +2214,46 @@ function WorkingDirectoryBadge({
         </CommandPrimitive>
       </PopoverContent>
     </Popover>
+  )
+}
+
+/**
+ * GitBranchBadge - Display current git branch
+ */
+function GitBranchBadge({
+  workingDirectory,
+}: {
+  workingDirectory: string
+}) {
+  const [gitBranch, setGitBranch] = React.useState<string | null>(null)
+
+  const normalizedWorkingDirectory = React.useMemo(() => {
+    if (!workingDirectory) return undefined
+    const normalized = normalizeWorkingDirCandidate(workingDirectory)
+    return normalized || undefined
+  }, [workingDirectory])
+
+  React.useEffect(() => {
+    if (normalizedWorkingDirectory) {
+      window.electronAPI?.getGitBranch?.(normalizedWorkingDirectory).then((branch: string | null) => {
+        setGitBranch(branch)
+      })
+    } else {
+      setGitBranch(null)
+    }
+  }, [normalizedWorkingDirectory])
+
+  if (!gitBranch) return null
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className="inline-flex items-center h-7 px-2 gap-1.5 text-[13px] shrink-0 rounded-[6px] text-muted-foreground select-none">
+          <GitBranch className="h-3.5 w-3.5" />
+          <span className="truncate max-w-[120px]">{gitBranch}</span>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="top">Git branch: {gitBranch}</TooltipContent>
+    </Tooltip>
   )
 }
