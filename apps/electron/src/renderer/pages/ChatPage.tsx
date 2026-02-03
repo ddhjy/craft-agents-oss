@@ -7,7 +7,7 @@
 
 import * as React from 'react'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { AlertCircle, Globe, Copy, RefreshCw, Link2Off, Info, ChevronDown, ExternalLink } from 'lucide-react'
+import { AlertCircle, Globe, Copy, RefreshCw, Link2Off, Info, ChevronDown, FolderOpen } from 'lucide-react'
 import { ChatDisplay, type ChatDisplayHandle } from '@/components/app-shell/ChatDisplay'
 import { PanelHeader } from '@/components/app-shell/PanelHeader'
 import { SessionMenu } from '@/components/app-shell/SessionMenu'
@@ -664,8 +664,8 @@ function OpenInButton({ workingDirectory }: { workingDirectory?: string }) {
         <TooltipTrigger asChild>
           <DropdownMenuTrigger asChild>
             <HeaderIconButton
-              icon={<ExternalLink className="h-4 w-4" />}
-              className={cn(isOpen && "bg-foreground/5")}
+              icon={<FolderOpen className="h-5 w-5" />}
+              className={cn("text-foreground", isOpen && "bg-foreground/5")}
             />
           </DropdownMenuTrigger>
         </TooltipTrigger>
