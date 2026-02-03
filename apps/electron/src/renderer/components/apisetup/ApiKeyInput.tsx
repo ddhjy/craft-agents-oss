@@ -66,8 +66,8 @@ const PRESETS: Preset[] = [
 ]
 
 export const IDEA_MODELS = [
-  { id: 'gemini-3-flash-priority', name: 'Gemini 3 Flash', description: 'Default' },
-  { id: 'gemini-3-pro-priority', name: 'Gemini 3 Pro', description: 'High quality' },
+  { id: 'gemini-3-flash-priority-new', name: 'Gemini 3 Flash', description: 'Default' },
+  { id: 'gemini-3-pro-priority-new', name: 'Gemini 3 Pro', description: 'High quality' },
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: 'Stable' },
   { id: 'gpt-5', name: 'GPT-5', description: 'OpenAI latest' },
   { id: 'gpt-5-high', name: 'GPT-5 High', description: 'Higher quality' },
