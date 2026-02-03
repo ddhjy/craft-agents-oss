@@ -199,10 +199,18 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     windowManager.closeWindow(event.sender.id)
   })
 
-  // Confirm close - force close the window (bypasses interception).
+  // Confirm close - on macOS, hide the window instead of closing it.
+  // On other platforms, force close the window.
   // Called by renderer when it has no modals to close and wants to proceed.
   ipcMain.handle(IPC_CHANNELS.WINDOW_CONFIRM_CLOSE, (event) => {
-    windowManager.forceCloseWindow(event.sender.id)
+    if (process.platform === 'darwin') {
+      const window = BrowserWindow.fromWebContents(event.sender)
+      if (window) {
+        window.hide()
+      }
+    } else {
+      windowManager.forceCloseWindow(event.sender.id)
+    }
   })
 
   // Show/hide macOS traffic light buttons (for fullscreen overlays)
