@@ -746,40 +746,74 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
   })
 
   // Get git status (staged, unstaged, untracked file counts)
-  ipcMain.handle(IPC_CHANNELS.GET_GIT_STATUS, (_event, dirPath: string) => {
-    try {
-      const output = execSync('git status --porcelain', {
-        cwd: dirPath,
-        encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-        timeout: 5000,
-      })
-
+  ipcMain.handle(IPC_CHANNELS.GET_GIT_STATUS, async (_event, dirPath: string) => {
+    const result = await new Promise<{ staged: number; unstaged: number; untracked: number } | null>((resolve) => {
+      let settled = false
+      let buffer = ''
       let staged = 0
       let unstaged = 0
       let untracked = 0
+      let timeoutId: NodeJS.Timeout | undefined
 
-      for (const line of output.split('\n')) {
-        if (!line) continue
+      const finalize = (value: { staged: number; unstaged: number; untracked: number } | null) => {
+        if (settled) return
+        settled = true
+        if (timeoutId) clearTimeout(timeoutId)
+        resolve(value)
+      }
+
+      const processLine = (rawLine: string) => {
+        const line = rawLine.replace(/\r$/, '')
+        if (!line || line.length < 2) return
         const indexStatus = line[0]
         const workTreeStatus = line[1]
 
-        if (indexStatus === '?') {
+        if (indexStatus === '?' && workTreeStatus === '?') {
           untracked++
-        } else {
-          if (indexStatus !== ' ' && indexStatus !== '?') {
-            staged++
-          }
-          if (workTreeStatus !== ' ' && workTreeStatus !== '?') {
-            unstaged++
-          }
+          return
+        }
+        if (indexStatus !== ' ' && indexStatus !== '?') {
+          staged++
+        }
+        if (workTreeStatus !== ' ' && workTreeStatus !== '?') {
+          unstaged++
         }
       }
 
-      return { staged, unstaged, untracked }
-    } catch {
-      return null
-    }
+      const child = spawn('git', ['status', '--porcelain'], {
+        cwd: dirPath,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        windowsHide: true,
+      })
+
+      child.stdout.on('data', (chunk) => {
+        buffer += chunk.toString('utf-8')
+        let newlineIndex = buffer.indexOf('\n')
+        while (newlineIndex >= 0) {
+          const line = buffer.slice(0, newlineIndex)
+          buffer = buffer.slice(newlineIndex + 1)
+          processLine(line)
+          newlineIndex = buffer.indexOf('\n')
+        }
+      })
+
+      child.once('error', () => finalize(null))
+      child.once('close', (code) => {
+        if (buffer) processLine(buffer)
+        if (code === 0) {
+          finalize({ staged, unstaged, untracked })
+        } else {
+          finalize(null)
+        }
+      })
+
+      timeoutId = setTimeout(() => {
+        child.kill()
+        finalize(null)
+      }, 5000)
+    })
+
+    return result
   })
 
   // Git Bash detection and configuration (Windows only)

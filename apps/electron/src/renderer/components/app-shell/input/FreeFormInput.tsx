@@ -2234,17 +2234,60 @@ function GitBranchBadge({
     return normalized || undefined
   }, [workingDirectory])
 
-  React.useEffect(() => {
-    if (normalizedWorkingDirectory) {
-      window.electronAPI?.getGitBranch?.(normalizedWorkingDirectory).then((branch: string | null) => {
+  const refreshGitBranch = React.useCallback(() => {
+    if (!normalizedWorkingDirectory || !window.electronAPI?.getGitBranch) return
+    window.electronAPI.getGitBranch(normalizedWorkingDirectory)
+      .then((branch: string | null) => {
         setGitBranch(branch)
       })
-      window.electronAPI?.getGitStatus?.(normalizedWorkingDirectory).then((status) => {
+      .catch(() => {
+        setGitBranch(null)
+      })
+  }, [normalizedWorkingDirectory])
+
+  const refreshGitStatus = React.useCallback(() => {
+    if (!normalizedWorkingDirectory || !window.electronAPI?.getGitStatus) return
+    window.electronAPI.getGitStatus(normalizedWorkingDirectory)
+      .then((status) => {
         setGitStatus(status)
       })
+      .catch(() => {
+        setGitStatus(null)
+      })
+  }, [normalizedWorkingDirectory])
+
+  React.useEffect(() => {
+    if (normalizedWorkingDirectory) {
+      refreshGitBranch()
+      refreshGitStatus()
     } else {
       setGitBranch(null)
       setGitStatus(null)
+    }
+  }, [normalizedWorkingDirectory, refreshGitBranch, refreshGitStatus])
+
+  React.useEffect(() => {
+    if (!normalizedWorkingDirectory || !window.electronAPI?.getGitStatus) return
+    let cancelled = false
+    let inFlight = false
+
+    const tick = async () => {
+      if (cancelled || inFlight) return
+      inFlight = true
+      try {
+        const status = await window.electronAPI.getGitStatus(normalizedWorkingDirectory)
+        if (!cancelled) setGitStatus(status)
+      } catch {
+        if (!cancelled) setGitStatus(null)
+      } finally {
+        inFlight = false
+      }
+    }
+
+    const intervalId = window.setInterval(tick, 5000)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
     }
   }, [normalizedWorkingDirectory])
 
