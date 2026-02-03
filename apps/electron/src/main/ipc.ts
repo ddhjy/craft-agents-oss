@@ -11,7 +11,8 @@ import { WindowManager } from './window-manager'
 import { registerOnboardingHandlers } from './onboarding'
 import { IPC_CHANNELS, type FileAttachment, type StoredAttachment, type AuthType, type ApiSetupInfo, type SendMessageOptions, type AvailableApp } from '../shared/types'
 import { readFileAttachment, perf, validateImageForClaudeAPI, IMAGE_LIMITS } from '@craft-agent/shared/utils'
-import { getAuthType, setAuthType, getPreferencesPath, getCustomModel, setCustomModel, getModel, setModel, getSessionDraft, setSessionDraft, deleteSessionDraft, getAllSessionDrafts, getWorkspaceByNameOrId, addWorkspace, setActiveWorkspace, getAnthropicBaseUrl, setAnthropicBaseUrl, loadStoredConfig, saveConfig, type Workspace, SUMMARIZATION_MODEL } from '@craft-agent/shared/config'
+import { getAuthState } from '@craft-agent/shared/auth'
+import { getAuthType, setAuthType, getPreferencesPath, getCustomModel, setCustomModel, getModel, setModel, getSessionDraft, setSessionDraft, deleteSessionDraft, getAllSessionDrafts, getWorkspaceByNameOrId, getActiveWorkspace, addWorkspace, setActiveWorkspace, getAnthropicBaseUrl, setAnthropicBaseUrl, loadStoredConfig, saveConfig, type Workspace, SUMMARIZATION_MODEL } from '@craft-agent/shared/config'
 import { getSessionAttachmentsPath, validateSessionId } from '@craft-agent/shared/sessions'
 import { loadWorkspaceSources, getSourcesBySlugs, type LoadedSource } from '@craft-agent/shared/sources'
 import { isValidThinkingLevel } from '@craft-agent/shared/agent/thinking-levels'
@@ -161,11 +162,39 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
   // ============================================================
 
   // Get workspace ID for the calling window
-  ipcMain.handle(IPC_CHANNELS.GET_WINDOW_WORKSPACE, (event) => {
-    const workspaceId = windowManager.getWorkspaceForWindow(event.sender.id)
+  ipcMain.handle(IPC_CHANNELS.GET_WINDOW_WORKSPACE, async (event) => {
+    let workspaceId = windowManager.getWorkspaceForWindow(event.sender.id)
+    let workspace = workspaceId ? getWorkspaceByNameOrId(workspaceId) : null
+
+    if (!workspace) {
+      let activeWorkspace = getActiveWorkspace()
+      if (!activeWorkspace) {
+        try {
+          await getAuthState()
+        } catch (error) {
+          ipcLog.warn('[ipc.getWindowWorkspace] Failed to initialize auth state:', error)
+        }
+        activeWorkspace = getActiveWorkspace()
+      }
+
+      if (activeWorkspace) {
+        const updated = windowManager.updateWindowWorkspace(event.sender.id, activeWorkspace.id)
+        if (!updated) {
+          const win = BrowserWindow.fromWebContents(event.sender)
+          if (win) {
+            windowManager.registerWindow(win, activeWorkspace.id)
+          }
+        }
+        workspaceId = activeWorkspace.id
+        workspace = activeWorkspace
+      }
+    }
+
     // Set up ConfigWatcher for live updates (labels, statuses, sources, themes)
     if (workspaceId) {
-      const workspace = getWorkspaceByNameOrId(workspaceId)
+      if (!workspace) {
+        workspace = getWorkspaceByNameOrId(workspaceId)
+      }
       if (workspace) {
         sessionManager.setupConfigWatcher(workspace.rootPath, workspaceId)
       }
