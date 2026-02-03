@@ -1652,7 +1652,9 @@ function AppShellContent({
     const newSession = await onCreateSession(activeWorkspace.id)
     // Navigate to the new session via central routing
     navigate(routes.view.allChats(newSession.id))
-  }, [activeWorkspace, onCreateSession])
+    // Focus chat input after creating new session
+    requestAnimationFrame(() => focusChatInput())
+  }, [activeWorkspace, onCreateSession, focusChatInput])
 
   // Delete Source - simplified since agents system is removed
   const handleDeleteSource = useCallback(async (sourceSlug: string) => {
