@@ -356,12 +356,15 @@ app.whenReady().then(async () => {
     // Continue anyway - the app will show errors in the UI
   }
 
-  // macOS: Re-create window when dock icon is clicked
+  // macOS: Reveal hidden windows or re-create when dock icon is clicked
   app.on('activate', () => {
-    if (!windowManager?.hasWindows()) {
+    if (!windowManager) return
+
+    const managedWindows = windowManager.getAllWindows()
+    if (managedWindows.length === 0) {
       // Open first workspace or last focused
       const workspaces = getWorkspaces()
-      if (workspaces.length > 0 && windowManager) {
+      if (workspaces.length > 0) {
         const savedState = loadWindowState()
         const wsId = savedState?.lastFocusedWorkspaceId || workspaces[0].id
         // Verify workspace still exists
@@ -371,6 +374,21 @@ app.whenReady().then(async () => {
           windowManager.createWindow({ workspaceId: workspaces[0].id })
         }
       }
+      return
+    }
+
+    const hasVisibleWindow = managedWindows.some(({ window }) => window.isVisible() && !window.isMinimized())
+    if (!hasVisibleWindow) {
+      for (const { window } of managedWindows) {
+        if (window.isMinimized()) {
+          window.restore()
+        }
+        if (!window.isVisible()) {
+          window.show()
+        }
+      }
+      const focusTarget = windowManager.getLastActiveWindow() ?? managedWindows[0].window
+      focusTarget.focus()
     }
   })
 })

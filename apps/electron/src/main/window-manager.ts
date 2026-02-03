@@ -443,6 +443,9 @@ export class WindowManager {
       if (existing.isMinimized()) {
         existing.restore()
       }
+      if (!existing.isVisible()) {
+        existing.show()
+      }
       existing.focus()
       return existing
     }

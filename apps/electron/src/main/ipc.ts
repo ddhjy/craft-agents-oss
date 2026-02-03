@@ -199,15 +199,12 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     windowManager.closeWindow(event.sender.id)
   })
 
-  // Confirm close - on macOS, hide the window instead of closing it.
+  // Confirm close - on macOS, hide the app instead of closing windows.
   // On other platforms, force close the window.
   // Called by renderer when it has no modals to close and wants to proceed.
   ipcMain.handle(IPC_CHANNELS.WINDOW_CONFIRM_CLOSE, (event) => {
     if (process.platform === 'darwin') {
-      const window = BrowserWindow.fromWebContents(event.sender)
-      if (window) {
-        window.hide()
-      }
+      app.hide()
     } else {
       windowManager.forceCloseWindow(event.sender.id)
     }
