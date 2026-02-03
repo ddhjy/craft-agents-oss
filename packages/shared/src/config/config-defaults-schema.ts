@@ -50,7 +50,7 @@ export const BUNDLED_CONFIG_DEFAULTS: ConfigDefaults = {
   defaults: {
     authType: 'api_key',
     notificationsEnabled: true,
-    colorTheme: 'default',
+    colorTheme: 'xcode',
     anthropicBaseUrl: IDEA_BASE_URL,
     customModel: IDEA_DEFAULT_MODEL,
     autoCapitalisation: true,
