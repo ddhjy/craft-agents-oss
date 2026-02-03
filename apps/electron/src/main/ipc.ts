@@ -745,6 +745,43 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     }
   })
 
+  // Get git status (staged, unstaged, untracked file counts)
+  ipcMain.handle(IPC_CHANNELS.GET_GIT_STATUS, (_event, dirPath: string) => {
+    try {
+      const output = execSync('git status --porcelain', {
+        cwd: dirPath,
+        encoding: 'utf-8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+        timeout: 5000,
+      })
+
+      let staged = 0
+      let unstaged = 0
+      let untracked = 0
+
+      for (const line of output.split('\n')) {
+        if (!line) continue
+        const indexStatus = line[0]
+        const workTreeStatus = line[1]
+
+        if (indexStatus === '?') {
+          untracked++
+        } else {
+          if (indexStatus !== ' ' && indexStatus !== '?') {
+            staged++
+          }
+          if (workTreeStatus !== ' ' && workTreeStatus !== '?') {
+            unstaged++
+          }
+        }
+      }
+
+      return { staged, unstaged, untracked }
+    } catch {
+      return null
+    }
+  })
+
   // Git Bash detection and configuration (Windows only)
   ipcMain.handle(IPC_CHANNELS.GITBASH_CHECK, async () => {
     const platform = process.platform as 'win32' | 'darwin' | 'linux'

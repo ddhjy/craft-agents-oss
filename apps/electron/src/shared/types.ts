@@ -255,6 +255,15 @@ export interface GitBashStatus {
 }
 
 /**
+ * Git repository status (changed files count)
+ */
+export interface GitStatus {
+  staged: number
+  unstaged: number
+  untracked: number
+}
+
+/**
  * Result of saving onboarding configuration
  */
 export interface OnboardingSaveResult {
@@ -738,6 +747,7 @@ export const IPC_CHANNELS = {
 
   // Git operations
   GET_GIT_BRANCH: 'git:getBranch',
+  GET_GIT_STATUS: 'git:getStatus',
 
   // Git Bash (Windows)
   GITBASH_CHECK: 'gitbash:check',
@@ -1019,6 +1029,7 @@ export interface ElectronAPI {
 
   // Git operations
   getGitBranch(dirPath: string): Promise<string | null>
+  getGitStatus(dirPath: string): Promise<GitStatus | null>
 
   // Git Bash (Windows)
   checkGitBash(): Promise<GitBashStatus>

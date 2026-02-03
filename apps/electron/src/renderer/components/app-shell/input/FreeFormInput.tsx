@@ -2218,7 +2218,7 @@ function WorkingDirectoryBadge({
 }
 
 /**
- * GitBranchBadge - Display current git branch
+ * GitBranchBadge - Display current git branch and changes summary
  */
 function GitBranchBadge({
   workingDirectory,
@@ -2226,6 +2226,7 @@ function GitBranchBadge({
   workingDirectory: string
 }) {
   const [gitBranch, setGitBranch] = React.useState<string | null>(null)
+  const [gitStatus, setGitStatus] = React.useState<{ staged: number; unstaged: number; untracked: number } | null>(null)
 
   const normalizedWorkingDirectory = React.useMemo(() => {
     if (!workingDirectory) return undefined
@@ -2238,12 +2239,19 @@ function GitBranchBadge({
       window.electronAPI?.getGitBranch?.(normalizedWorkingDirectory).then((branch: string | null) => {
         setGitBranch(branch)
       })
+      window.electronAPI?.getGitStatus?.(normalizedWorkingDirectory).then((status) => {
+        setGitStatus(status)
+      })
     } else {
       setGitBranch(null)
+      setGitStatus(null)
     }
   }, [normalizedWorkingDirectory])
 
   if (!gitBranch) return null
+
+  const totalChanges = gitStatus ? gitStatus.staged + gitStatus.unstaged + gitStatus.untracked : 0
+  const hasChanges = totalChanges > 0
 
   return (
     <Tooltip>
@@ -2251,9 +2259,23 @@ function GitBranchBadge({
         <div className="inline-flex items-center h-7 px-2 gap-1.5 text-[13px] shrink-0 rounded-[6px] text-muted-foreground select-none">
           <GitBranch className="h-3.5 w-3.5" />
           <span className="truncate max-w-[120px]">{gitBranch}</span>
+          {gitStatus && (
+            <span className={cn("tabular-nums", hasChanges && "text-orange-500")}>
+              ± {totalChanges}
+            </span>
+          )}
         </div>
       </TooltipTrigger>
-      <TooltipContent side="top">Git branch: {gitBranch}</TooltipContent>
+      <TooltipContent side="top">
+        <div className="flex flex-col gap-0.5">
+          <span>Branch: {gitBranch}</span>
+          {gitStatus && (
+            <span className="text-xs opacity-70">
+              {gitStatus.staged} staged, {gitStatus.unstaged} modified, {gitStatus.untracked} untracked
+            </span>
+          )}
+        </div>
+      </TooltipContent>
     </Tooltip>
   )
 }
