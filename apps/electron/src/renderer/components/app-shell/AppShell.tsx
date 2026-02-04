@@ -1971,15 +1971,9 @@ function AppShellContent({
       {(() => {
         const menuLeftOffset = isMac ? 86 : 12
         return (
-          <motion.div
-            initial={false}
-            animate={{ opacity: effectiveCompactMode ? 0 : 1 }}
-            transition={springTransition}
-            className={cn(
-              "fixed top-0 h-[50px] z-overlay flex items-center titlebar-no-drag pr-2",
-              effectiveCompactMode && "pointer-events-none"
-            )}
-            style={{ left: menuLeftOffset, width: sidebarWidth - menuLeftOffset }}
+          <div
+            className="fixed top-0 h-[50px] z-overlay flex items-center titlebar-no-drag pr-2"
+            style={{ left: menuLeftOffset }}
           >
             <AppMenu
               onNewChat={() => handleNewChat(true)}
@@ -1994,18 +1988,18 @@ function AppShellContent({
               canGoForward={canGoForward}
               onToggleSidebar={toggleSidebar}
               onToggleFocusMode={cycleViewMode}
-              onCycleViewMode={cycleViewMode}
+              onCycleViewMode={isSidebarVisible ? cycleViewMode : undefined}
             />
-          </motion.div>
+          </div>
         )
       })()}
 
       {/* View Mode Toggle - Only visible when sidebar is hidden (compact/focus mode)
-          Allows user to switch back to full view */}
+          Positioned after AppMenu (approx 28px for menu button + gap) */}
       {!isSidebarVisible && (
         <div
           className="fixed top-0 h-[50px] z-overlay flex items-center titlebar-no-drag"
-          style={{ left: isMac ? 86 : 12 }}
+          style={{ left: isMac ? 86 + 32 : 12 + 32 }}
         >
           <TooltipProvider delayDuration={0}>
             <Tooltip>

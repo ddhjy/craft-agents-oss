@@ -196,7 +196,7 @@ export function AppMenu({
   }
 
   return (
-    <div className="flex items-center gap-[5px] w-full">
+    <div className="flex items-center gap-[5px]">
       {/* Craft Logo Menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -324,16 +324,13 @@ export function AppMenu({
         </TopBarButton>
       )}
 
-      {/* Spacer to push nav buttons right */}
-      <div className="flex-1" />
-
       {/* Back Navigation */}
       <TopBarButton
         onClick={onBack}
         disabled={!canGoBack}
         aria-label="Go back"
       >
-        <Icons.ChevronLeft className="h-[22px] w-[22px] text-foreground/70" strokeWidth={1.5} />
+        <Icons.ChevronLeft className="h-5 w-5 text-foreground/70" strokeWidth={1.5} />
       </TopBarButton>
 
       {/* Forward Navigation */}
@@ -342,7 +339,7 @@ export function AppMenu({
         disabled={!canGoForward}
         aria-label="Go forward"
       >
-        <Icons.ChevronRight className="h-[22px] w-[22px] text-foreground/70" strokeWidth={1.5} />
+        <Icons.ChevronRight className="h-5 w-5 text-foreground/70" strokeWidth={1.5} />
       </TopBarButton>
     </div>
   )
