@@ -208,6 +208,8 @@ export interface CredentialResponse {
   username?: string
   /** Password for basic auth */
   password?: string
+  /** Header values for multi-header mode (e.g., { "DD-API-KEY": "...", "DD-APPLICATION-KEY": "..." }) */
+  headers?: Record<string, string>
   /** Whether user cancelled */
   cancelled: boolean
 }
@@ -1122,8 +1124,10 @@ export interface UpdateInfo {
   latestVersion: string | null
   /** Download state */
   downloadState: 'idle' | 'downloading' | 'ready' | 'installing' | 'error'
-  /** Download progress (0-100) */
+  /** Download progress (0-100, or -1 for indeterminate on macOS) */
   downloadProgress: number
+  /** Whether this platform supports download progress events (false on macOS) */
+  supportsProgress: boolean
   /** Error message if download/install failed */
   error?: string
 }
