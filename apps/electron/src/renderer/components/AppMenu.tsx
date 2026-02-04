@@ -12,7 +12,7 @@ import {
   StyledDropdownMenuSubContent,
 } from "@/components/ui/styled-dropdown"
 import * as Icons from "lucide-react"
-import { LayoutGrid } from "lucide-react"
+import { LayoutGrid, PanelLeft, Maximize2 } from "lucide-react"
 import { CraftAgentsSymbol } from "./icons/CraftAgentsSymbol"
 import { SquarePenRounded } from "./icons/SquarePenRounded"
 import { TopBarButton } from "./ui/TopBarButton"
@@ -149,6 +149,8 @@ interface AppMenuProps {
   onToggleFocusMode?: () => void
   /** Callback to cycle view mode */
   onCycleViewMode?: () => void
+  /** Current view mode for icon state */
+  viewMode?: ViewMode
 }
 
 /**
@@ -181,6 +183,7 @@ export function AppMenu({
   onToggleSidebar,
   onToggleFocusMode,
   onCycleViewMode,
+  viewMode,
 }: AppMenuProps) {
   const [isDebugMode, setIsDebugMode] = useState(false)
   const modKey = isMac ? '⌘' : 'Ctrl+'
@@ -194,6 +197,12 @@ export function AppMenu({
     toggleFocusMode: onToggleFocusMode,
     toggleSidebar: onToggleSidebar,
   }
+
+  const ViewModeIcon = viewMode === 'compact'
+    ? PanelLeft
+    : viewMode === 'focus'
+      ? Maximize2
+      : LayoutGrid
 
   return (
     <div className="flex items-center gap-[5px]">
@@ -320,7 +329,7 @@ export function AppMenu({
       {/* View Mode Toggle - cycles through full → compact → focus */}
       {onCycleViewMode && (
         <TopBarButton onClick={onCycleViewMode} aria-label="Toggle view mode">
-          <LayoutGrid className="h-4 w-4 text-foreground/70" />
+          <ViewModeIcon className="h-4 w-4 text-foreground/70" />
         </TopBarButton>
       )}
 

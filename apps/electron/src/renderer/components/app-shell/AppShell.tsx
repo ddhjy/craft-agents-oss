@@ -25,9 +25,6 @@ import {
   HelpCircle,
   ExternalLink,
   Store,
-  LayoutGrid,
-  PanelLeft,
-  Maximize2,
 } from "lucide-react"
 import { PanelRightRounded } from "../icons/PanelRightRounded"
 import { PanelLeftRounded } from "../icons/PanelLeftRounded"
@@ -1954,14 +1951,6 @@ function AppShellContent({
   }, [chatFilter, labelCounts, activeWorkspace?.id, handleLabelClick, isExpanded, toggleExpanded, openConfigureLabels, handleAddLabel, handleDeleteLabel])
 
   const menuLeftOffset = isMac ? 86 : 12
-  const appMenuButtonSize = 28
-  const appMenuButtonGap = 5
-  const appMenuButtonCount = 3
-  const appMenuRightPadding = 8
-  const appMenuWidth = (appMenuButtonSize * appMenuButtonCount)
-    + (appMenuButtonGap * (appMenuButtonCount - 1))
-    + appMenuRightPadding
-  const viewModeLeftOffset = menuLeftOffset + appMenuWidth
 
   return (
     <AppShellProvider value={appShellContextValue}>
@@ -1995,37 +1984,10 @@ function AppShellContent({
           canGoForward={canGoForward}
           onToggleSidebar={toggleSidebar}
           onToggleFocusMode={cycleViewMode}
-          onCycleViewMode={isSidebarVisible ? cycleViewMode : undefined}
+          onCycleViewMode={cycleViewMode}
+          viewMode={viewMode}
         />
       </div>
-
-      {/* View Mode Toggle - Only visible when sidebar is hidden (compact/focus mode)
-          Positioned after AppMenu buttons to avoid overlap */}
-      {!isSidebarVisible && (
-        <div
-          className="fixed top-0 h-[50px] z-overlay flex items-center titlebar-no-drag"
-          style={{ left: viewModeLeftOffset }}
-        >
-          <TooltipProvider delayDuration={0}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={cycleViewMode}
-                  aria-label="Toggle view mode"
-                  className="flex items-center justify-center h-[28px] w-[28px] rounded-[6px] hover:bg-foreground/10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring outline-none transition-colors"
-                >
-                  {viewMode === 'compact' && <PanelLeft className="h-4 w-4 text-foreground/70" />}
-                  {viewMode === 'focus' && <Maximize2 className="h-4 w-4 text-foreground/70" />}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {viewMode === 'compact' && 'Compact view - click to show all'}
-                {viewMode === 'focus' && 'Focus mode - click to show all'}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      )}
 
       {/* === OUTER LAYOUT: Sidebar | Main Content === */}
       <div className="h-full flex items-stretch relative">
