@@ -12,6 +12,7 @@ import {
   StyledDropdownMenuSubContent,
 } from "@/components/ui/styled-dropdown"
 import * as Icons from "lucide-react"
+import { LayoutGrid } from "lucide-react"
 import { CraftAgentsSymbol } from "./icons/CraftAgentsSymbol"
 import { SquarePenRounded } from "./icons/SquarePenRounded"
 import { TopBarButton } from "./ui/TopBarButton"
@@ -146,6 +147,8 @@ interface AppMenuProps {
   canGoForward?: boolean
   onToggleSidebar?: () => void
   onToggleFocusMode?: () => void
+  /** Callback to cycle view mode */
+  onCycleViewMode?: () => void
 }
 
 /**
@@ -177,6 +180,7 @@ export function AppMenu({
   canGoForward = true,
   onToggleSidebar,
   onToggleFocusMode,
+  onCycleViewMode,
 }: AppMenuProps) {
   const [isDebugMode, setIsDebugMode] = useState(false)
   const modKey = isMac ? '⌘' : 'Ctrl+'
@@ -312,6 +316,13 @@ export function AppMenu({
           </StyledDropdownMenuItem>
         </StyledDropdownMenuContent>
       </DropdownMenu>
+
+      {/* View Mode Toggle - cycles through full → compact → focus */}
+      {onCycleViewMode && (
+        <TopBarButton onClick={onCycleViewMode} aria-label="Toggle view mode">
+          <LayoutGrid className="h-4 w-4 text-foreground/70" />
+        </TopBarButton>
+      )}
 
       {/* Spacer to push nav buttons right */}
       <div className="flex-1" />

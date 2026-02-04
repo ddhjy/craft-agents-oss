@@ -1994,38 +1994,39 @@ function AppShellContent({
               canGoForward={canGoForward}
               onToggleSidebar={toggleSidebar}
               onToggleFocusMode={cycleViewMode}
+              onCycleViewMode={cycleViewMode}
             />
           </motion.div>
         )
       })()}
 
-      {/* View Mode Toggle - Always visible in top left corner
-          Uses same offset as AppMenu to align properly */}
-      <div
-        className="fixed top-0 h-[50px] z-overlay flex items-center titlebar-no-drag"
-        style={{ left: isMac ? 86 : 12 }}
-      >
-        <TooltipProvider delayDuration={0}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={cycleViewMode}
-                aria-label="Toggle view mode"
-                className="flex items-center justify-center h-[28px] w-[28px] rounded-[6px] hover:bg-foreground/10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring outline-none transition-colors"
-              >
-                {viewMode === 'full' && <LayoutGrid className="h-4 w-4 text-foreground/70" />}
-                {viewMode === 'compact' && <PanelLeft className="h-4 w-4 text-foreground/70" />}
-                {viewMode === 'focus' && <Maximize2 className="h-4 w-4 text-foreground/70" />}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              {viewMode === 'full' && 'Full view (showing all panels)'}
-              {viewMode === 'compact' && 'Compact view (sidebar hidden)'}
-              {viewMode === 'focus' && 'Focus mode (chat only)'}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
+      {/* View Mode Toggle - Only visible when sidebar is hidden (compact/focus mode)
+          Allows user to switch back to full view */}
+      {!isSidebarVisible && (
+        <div
+          className="fixed top-0 h-[50px] z-overlay flex items-center titlebar-no-drag"
+          style={{ left: isMac ? 86 : 12 }}
+        >
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={cycleViewMode}
+                  aria-label="Toggle view mode"
+                  className="flex items-center justify-center h-[28px] w-[28px] rounded-[6px] hover:bg-foreground/10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring outline-none transition-colors"
+                >
+                  {viewMode === 'compact' && <PanelLeft className="h-4 w-4 text-foreground/70" />}
+                  {viewMode === 'focus' && <Maximize2 className="h-4 w-4 text-foreground/70" />}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {viewMode === 'compact' && 'Compact view - click to show all'}
+                {viewMode === 'focus' && 'Focus mode - click to show all'}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
 
       {/* === OUTER LAYOUT: Sidebar | Main Content === */}
       <div className="h-full flex items-stretch relative">
