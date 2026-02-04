@@ -1953,6 +1953,16 @@ function AppShellContent({
     })
   }, [chatFilter, labelCounts, activeWorkspace?.id, handleLabelClick, isExpanded, toggleExpanded, openConfigureLabels, handleAddLabel, handleDeleteLabel])
 
+  const menuLeftOffset = isMac ? 86 : 12
+  const appMenuButtonSize = 28
+  const appMenuButtonGap = 5
+  const appMenuButtonCount = 3
+  const appMenuRightPadding = 8
+  const appMenuWidth = (appMenuButtonSize * appMenuButtonCount)
+    + (appMenuButtonGap * (appMenuButtonCount - 1))
+    + appMenuRightPadding
+  const viewModeLeftOffset = menuLeftOffset + appMenuWidth
+
   return (
     <AppShellProvider value={appShellContextValue}>
       <TooltipProvider delayDuration={0}>
@@ -1968,38 +1978,33 @@ function AppShellContent({
       {/* App Menu - fixed position, fades out in compact/focused mode
           On macOS: offset 86px to avoid stoplight controls
           On Windows/Linux: offset 12px (no stoplight controls) */}
-      {(() => {
-        const menuLeftOffset = isMac ? 86 : 12
-        return (
-          <div
-            className="fixed top-0 h-[50px] z-overlay flex items-center titlebar-no-drag pr-2"
-            style={{ left: menuLeftOffset }}
-          >
-            <AppMenu
-              onNewChat={() => handleNewChat(true)}
-              onNewWindow={() => window.electronAPI.menuNewWindow()}
-              onOpenSettings={onOpenSettings}
-              onOpenSettingsSubpage={handleSettingsClick}
-              onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
-              onOpenStoredUserPreferences={onOpenStoredUserPreferences}
-              onBack={goBack}
-              onForward={goForward}
-              canGoBack={canGoBack}
-              canGoForward={canGoForward}
-              onToggleSidebar={toggleSidebar}
-              onToggleFocusMode={cycleViewMode}
-              onCycleViewMode={isSidebarVisible ? cycleViewMode : undefined}
-            />
-          </div>
-        )
-      })()}
+      <div
+        className="fixed top-0 h-[50px] z-overlay flex items-center titlebar-no-drag pr-2"
+        style={{ left: menuLeftOffset }}
+      >
+        <AppMenu
+          onNewChat={() => handleNewChat(true)}
+          onNewWindow={() => window.electronAPI.menuNewWindow()}
+          onOpenSettings={onOpenSettings}
+          onOpenSettingsSubpage={handleSettingsClick}
+          onOpenKeyboardShortcuts={onOpenKeyboardShortcuts}
+          onOpenStoredUserPreferences={onOpenStoredUserPreferences}
+          onBack={goBack}
+          onForward={goForward}
+          canGoBack={canGoBack}
+          canGoForward={canGoForward}
+          onToggleSidebar={toggleSidebar}
+          onToggleFocusMode={cycleViewMode}
+          onCycleViewMode={isSidebarVisible ? cycleViewMode : undefined}
+        />
+      </div>
 
       {/* View Mode Toggle - Only visible when sidebar is hidden (compact/focus mode)
-          Positioned after AppMenu (approx 28px for menu button + gap) */}
+          Positioned after AppMenu buttons to avoid overlap */}
       {!isSidebarVisible && (
         <div
           className="fixed top-0 h-[50px] z-overlay flex items-center titlebar-no-drag"
-          style={{ left: isMac ? 86 + 32 : 12 + 32 }}
+          style={{ left: viewModeLeftOffset }}
         >
           <TooltipProvider delayDuration={0}>
             <Tooltip>
