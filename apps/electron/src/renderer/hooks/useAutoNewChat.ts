@@ -53,6 +53,15 @@ export function useAutoNewChat({ enabled, workspaceId, openNewChat }: UseAutoNew
         return
       }
 
+      // Check if this focus is from a system interruption (lock screen, sleep)
+      // If so, skip auto-new-chat - user didn't intentionally switch away
+      const wasSystemInterrupted = await window.electronAPI.consumeSystemInterrupted()
+      if (wasSystemInterrupted) {
+        console.log('[AutoNewChat] Focus from system unlock/resume, skipping')
+        updateLastActiveTime()
+        return
+      }
+
       // Reload settings on focus to pick up any changes made in AppSettingsPage
       await loadSettings()
 

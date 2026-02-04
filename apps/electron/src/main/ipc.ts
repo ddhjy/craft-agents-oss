@@ -2760,6 +2760,13 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     return isAnyWindowFocused()
   })
 
+  // Consume system interrupted flag (lock screen, sleep)
+  // Returns true if system was interrupted (and clears the flag)
+  ipcMain.handle(IPC_CHANNELS.SYSTEM_INTERRUPTED_CONSUME, () => {
+    const { consumeSystemInterrupted } = require('./index')
+    return consumeSystemInterrupted()
+  })
+
   // Note: Permission mode cycling settings (cyclablePermissionModes) are now workspace-level
   // and managed via WORKSPACE_SETTINGS_GET/UPDATE channels
 

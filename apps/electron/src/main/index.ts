@@ -3,7 +3,7 @@
 import { loadShellEnv } from './shell-env'
 loadShellEnv()
 
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, powerMonitor } from 'electron'
 import { createHash } from 'crypto'
 import { hostname, homedir } from 'os'
 import * as Sentry from '@sentry/electron/main'
@@ -98,6 +98,20 @@ const DEEPLINK_SCHEME = process.env.CRAFT_DEEPLINK_SCHEME || 'bunnyagents'
 
 let windowManager: WindowManager | null = null
 let sessionManager: SessionManager | null = null
+
+// Track system interruptions (lock screen, sleep) to distinguish from normal app switching
+// When true, the next window focus should NOT trigger auto-new-chat
+let isSystemInterrupted = false
+
+/**
+ * Consume the system interrupted flag (returns current value and resets to false)
+ * Called by renderer when handling window focus to check if focus was from unlock/resume
+ */
+export function consumeSystemInterrupted(): boolean {
+  const wasInterrupted = isSystemInterrupted
+  isSystemInterrupted = false
+  return wasInterrupted
+}
 
 // Store pending deep link if app not ready yet (cold start)
 let pendingDeepLink: string | null = null
@@ -346,6 +360,17 @@ app.whenReady().then(async () => {
       await handleDeepLink(deepLink, windowManager)
       pendingFolderPath = null
     }
+
+    // Listen for system interruptions (lock screen, sleep)
+    // These should NOT trigger auto-new-chat when window regains focus
+    powerMonitor.on('lock-screen', () => {
+      mainLog.info('[powerMonitor] Screen locked')
+      isSystemInterrupted = true
+    })
+    powerMonitor.on('suspend', () => {
+      mainLog.info('[powerMonitor] System suspended')
+      isSystemInterrupted = true
+    })
 
     mainLog.info('App initialized successfully')
     if (isDebugMode) {

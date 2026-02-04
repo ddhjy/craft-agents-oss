@@ -450,6 +450,8 @@ const api: ElectronAPI = {
   },
   getWindowFocusState: () =>
     ipcRenderer.invoke(IPC_CHANNELS.WINDOW_GET_FOCUS_STATE),
+  consumeSystemInterrupted: () =>
+    ipcRenderer.invoke(IPC_CHANNELS.SYSTEM_INTERRUPTED_CONSUME) as Promise<boolean>,
   onWindowFocusChange: (callback: (isFocused: boolean) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, isFocused: boolean) => {
       callback(isFocused)

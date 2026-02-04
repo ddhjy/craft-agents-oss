@@ -761,8 +761,9 @@ export const IPC_CHANNELS = {
   BADGE_CLEAR: 'badge:clear',
   BADGE_SET_ICON: 'badge:setIcon',
   BADGE_DRAW: 'badge:draw',  // Broadcast: { count: number, iconDataUrl: string }
-  WINDOW_FOCUS_STATE: 'window:focusState',  // Broadcast: boolean (isFocused)
+  WINDOW_FOCUS_STATE: 'window:focusState',  // Broadcast: WindowFocusEvent
   WINDOW_GET_FOCUS_STATE: 'window:getFocusState',
+  SYSTEM_INTERRUPTED_CONSUME: 'system:interruptedConsume',  // Consume system interrupted flag (returns boolean)
 
   // Git operations
   GET_GIT_BRANCH: 'git:getBranch',
@@ -1051,6 +1052,7 @@ export interface ElectronAPI {
   setDockIconWithBadge(dataUrl: string): Promise<void>
   onBadgeDraw(callback: (data: { count: number; iconDataUrl: string }) => void): () => void
   getWindowFocusState(): Promise<boolean>
+  consumeSystemInterrupted(): Promise<boolean>
   onWindowFocusChange(callback: (isFocused: boolean) => void): () => void
   onNotificationNavigate(callback: (data: { workspaceId: string; sessionId: string }) => void): () => void
 
