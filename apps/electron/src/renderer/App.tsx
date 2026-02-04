@@ -22,6 +22,7 @@ import { useOnboarding } from '@/hooks/useOnboarding'
 import { useNotifications } from '@/hooks/useNotifications'
 import { useSession } from '@/hooks/useSession'
 import { useUpdateChecker } from '@/hooks/useUpdateChecker'
+import { useAutoNewChat } from '@/hooks/useAutoNewChat'
 import { NavigationProvider } from '@/contexts/NavigationContext'
 import { navigate, routes } from './lib/navigate'
 import { stripMarkdown } from './utils/text'
@@ -1186,6 +1187,14 @@ export default function App() {
   const handleOnboardingCancel = useCallback(() => {
     onboarding.handleCancel()
   }, [onboarding])
+
+  // Auto new chat when app comes to foreground after idle
+  // This is opt-in feature configured in preferences
+  useAutoNewChat({
+    enabled: appState === 'ready',
+    workspaceId: windowWorkspaceId,
+    openNewChat,
+  })
 
   // Build context value for AppShell component
   // This is memoized to prevent unnecessary re-renders

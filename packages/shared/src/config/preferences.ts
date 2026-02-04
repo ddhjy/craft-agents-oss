@@ -20,6 +20,18 @@ export interface DiffViewerPreferences {
   disableBackground?: boolean;
 }
 
+/**
+ * Auto new chat settings
+ * When the app comes to foreground after being idle for a period,
+ * automatically start a new conversation instead of resuming the last one.
+ */
+export interface AutoNewChatSettings {
+  /** Whether auto new chat is enabled (default: false) */
+  enabled?: boolean;
+  /** Idle timeout in minutes before auto-creating new chat (default: 10) */
+  idleTimeoutMinutes?: number;
+}
+
 export interface UserPreferences {
   name?: string;
   timezone?: string;
@@ -29,6 +41,8 @@ export interface UserPreferences {
   notes?: string;
   // Diff viewer display preferences
   diffViewer?: DiffViewerPreferences;
+  // Auto new chat settings
+  autoNewChat?: AutoNewChatSettings;
   // When the preferences were last updated
   updatedAt?: number;
 }
@@ -66,6 +80,10 @@ export function updatePreferences(updates: Partial<UserPreferences>): UserPrefer
     diffViewer: updates.diffViewer
       ? { ...current.diffViewer, ...updates.diffViewer }
       : current.diffViewer,
+    // Merge autoNewChat if provided
+    autoNewChat: updates.autoNewChat
+      ? { ...current.autoNewChat, ...updates.autoNewChat }
+      : current.autoNewChat,
   };
   savePreferences(updated);
   return updated;

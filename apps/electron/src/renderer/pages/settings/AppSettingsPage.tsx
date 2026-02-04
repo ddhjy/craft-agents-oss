@@ -29,6 +29,7 @@ import {
   SettingsCard,
   SettingsRow,
   SettingsToggle,
+  SettingsSelectRow,
 } from '@/components/settings'
 import { useUpdateChecker } from '@/hooks/useUpdateChecker'
 import { useOnboarding } from '@/hooks/useOnboarding'
@@ -56,6 +57,10 @@ export default function AppSettingsPage() {
   // Notifications state
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
 
+  // Auto new chat state
+  const [autoNewChatEnabled, setAutoNewChatEnabled] = useState(false)
+  const [autoNewChatTimeout, setAutoNewChatTimeout] = useState('10')
+
   // Auto-update state
   const updateChecker = useUpdateChecker()
   const [isCheckingForUpdates, setIsCheckingForUpdates] = useState(false)
@@ -73,13 +78,27 @@ export default function AppSettingsPage() {
   const loadConnectionInfo = useCallback(async () => {
     if (!window.electronAPI) return
     try {
-      const [billing, notificationsOn] = await Promise.all([
+      const [billing, notificationsOn, prefsResult] = await Promise.all([
         window.electronAPI.getApiSetup(),
         window.electronAPI.getNotificationsEnabled(),
+        window.electronAPI.readPreferences(),
       ])
       setAuthType(billing.authType)
       setHasCredential(billing.hasCredential)
       setNotificationsEnabled(notificationsOn)
+
+      // Load auto new chat settings
+      if (prefsResult.exists && prefsResult.content) {
+        try {
+          const prefs = JSON.parse(prefsResult.content)
+          if (prefs.autoNewChat) {
+            setAutoNewChatEnabled(prefs.autoNewChat.enabled ?? false)
+            setAutoNewChatTimeout(String(prefs.autoNewChat.idleTimeoutMinutes ?? 10))
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      }
     } catch (error) {
       console.error('Failed to load settings:', error)
     }
@@ -128,6 +147,39 @@ export default function AppSettingsPage() {
     await window.electronAPI.setNotificationsEnabled(enabled)
   }, [])
 
+  // Save auto new chat settings to preferences.json
+  const saveAutoNewChatSettings = useCallback(async (enabled: boolean, timeoutMinutes: number) => {
+    try {
+      const prefsResult = await window.electronAPI.readPreferences()
+      let prefs: Record<string, unknown> = {}
+      if (prefsResult.exists && prefsResult.content) {
+        try {
+          prefs = JSON.parse(prefsResult.content)
+        } catch {
+          // Start fresh if parse fails
+        }
+      }
+      prefs.autoNewChat = {
+        enabled,
+        idleTimeoutMinutes: timeoutMinutes,
+      }
+      prefs.updatedAt = Date.now()
+      await window.electronAPI.writePreferences(JSON.stringify(prefs, null, 2))
+    } catch (error) {
+      console.error('Failed to save auto new chat settings:', error)
+    }
+  }, [])
+
+  const handleAutoNewChatEnabledChange = useCallback(async (enabled: boolean) => {
+    setAutoNewChatEnabled(enabled)
+    await saveAutoNewChatSettings(enabled, parseInt(autoNewChatTimeout, 10))
+  }, [autoNewChatTimeout, saveAutoNewChatSettings])
+
+  const handleAutoNewChatTimeoutChange = useCallback(async (value: string) => {
+    setAutoNewChatTimeout(value)
+    await saveAutoNewChatSettings(autoNewChatEnabled, parseInt(value, 10))
+  }, [autoNewChatEnabled, saveAutoNewChatSettings])
+
   return (
     <div className="h-full flex flex-col">
       <PanelHeader title="App Settings" actions={<HeaderMenu route={routes.view.settings('app')} helpFeature="app-settings" />} />
@@ -144,6 +196,34 @@ export default function AppSettingsPage() {
                   checked={notificationsEnabled}
                   onCheckedChange={handleNotificationsEnabledChange}
                 />
+              </SettingsCard>
+            </SettingsSection>
+
+            {/* Auto New Chat */}
+            <SettingsSection title="Auto New Chat" description="Start a fresh conversation when returning after being away.">
+              <SettingsCard>
+                <SettingsToggle
+                  label="Auto new chat on focus"
+                  description="Automatically start a new chat when the app regains focus after being idle."
+                  checked={autoNewChatEnabled}
+                  onCheckedChange={handleAutoNewChatEnabledChange}
+                />
+                {autoNewChatEnabled && (
+                  <SettingsSelectRow
+                    label="Idle timeout"
+                    description="How long to wait before starting a new chat."
+                    value={autoNewChatTimeout}
+                    onValueChange={handleAutoNewChatTimeoutChange}
+                    options={[
+                      { value: '5', label: '5 minutes' },
+                      { value: '10', label: '10 minutes' },
+                      { value: '15', label: '15 minutes' },
+                      { value: '20', label: '20 minutes' },
+                      { value: '30', label: '30 minutes' },
+                      { value: '60', label: '1 hour' },
+                    ]}
+                  />
+                )}
               </SettingsCard>
             </SettingsSection>
 
