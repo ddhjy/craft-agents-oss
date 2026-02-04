@@ -80,7 +80,7 @@ import { registerThumbnailScheme, registerThumbnailHandler } from './thumbnail-p
 import log, { isDebugMode, mainLog, getLogFilePath } from './logger'
 import { setPerfEnabled, enableDebug } from '@craft-agent/shared/utils'
 import { initNotificationService, clearBadgeCount, initBadgeIcon, initInstanceBadge } from './notifications'
-import { checkForUpdatesOnLaunch, setWindowManager as setAutoUpdateWindowManager, isUpdating } from './auto-update'
+import { isUpdating } from './auto-update'
 
 // Initialize electron-log for renderer process support
 log.initialize()
@@ -334,16 +334,15 @@ app.whenReady().then(async () => {
       mainLog.warn('Failed to set Sentry context tags:', err)
     }
 
-    // Initialize auto-update (check immediately on launch)
-    // Skip in dev mode to avoid replacing /Applications app and launching it instead
-    setAutoUpdateWindowManager(windowManager)
-    if (app.isPackaged) {
-      checkForUpdatesOnLaunch().catch(err => {
-        mainLog.error('[auto-update] Launch check failed:', err)
-      })
-    } else {
-      mainLog.info('[auto-update] Skipping auto-update in dev mode')
-    }
+    // Auto-update disabled - using custom fork, not the original open source version
+    // setAutoUpdateWindowManager(windowManager)
+    // if (app.isPackaged) {
+    //   checkForUpdatesOnLaunch().catch(err => {
+    //     mainLog.error('[auto-update] Launch check failed:', err)
+    //   })
+    // } else {
+    //   mainLog.info('[auto-update] Skipping auto-update in dev mode')
+    // }
 
     // Process pending deep link from cold start
     if (pendingDeepLink) {
