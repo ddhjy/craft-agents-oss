@@ -25,12 +25,15 @@ import {
   HelpCircle,
   ExternalLink,
   Store,
+  LayoutGrid,
+  PanelLeft,
+  Maximize2,
 } from "lucide-react"
 import { PanelRightRounded } from "../icons/PanelRightRounded"
 import { PanelLeftRounded } from "../icons/PanelLeftRounded"
 // TodoStateIcons no longer used - icons come from dynamic todoStates
 import { SourceAvatar } from "@/components/ui/source-avatar"
-import { AppMenu } from "../AppMenu"
+import { AppMenu, type ViewMode } from "../AppMenu"
 import { SquarePenRounded } from "../icons/SquarePenRounded"
 import { McpIcon } from "../icons/McpIcon"
 import { cn } from "@/lib/utils"
@@ -502,13 +505,33 @@ function AppShellContent({
   })
   const [skipRightSidebarAnimation, setSkipRightSidebarAnimation] = React.useState(false)
 
-  // Focus mode state - hides both sidebars for distraction-free chat
-  // Can be enabled via prop (URL param for new windows) or toggled via Cmd+.
-  const [isFocusModeActive, setIsFocusModeActive] = React.useState(() => {
-    return storage.get(storage.KEYS.focusModeEnabled, false)
+  // View mode state - controls visibility of sidebar and session list
+  // 'full': show all (sidebar + session list + chat)
+  // 'compact': hide sidebar, show session list + chat
+  // 'focus': hide both sidebar and session list, show only chat
+  const [viewMode, setViewMode] = React.useState<ViewMode>(() => {
+    // Migrate from old focusModeEnabled if present
+    const oldFocusMode = storage.get(storage.KEYS.focusModeEnabled, false)
+    if (oldFocusMode) {
+      return 'focus'
+    }
+    return storage.get<ViewMode>(storage.KEYS.viewMode, 'full')
   })
-  // Effective focus mode combines prop-based (immutable) and state-based (toggleable)
-  const effectiveFocusMode = isFocusedMode || isFocusModeActive
+  
+  // Cycle through view modes: full -> compact -> focus -> full
+  const cycleViewMode = React.useCallback(() => {
+    setViewMode(current => {
+      switch (current) {
+        case 'full': return 'compact'
+        case 'compact': return 'focus'
+        case 'focus': return 'full'
+      }
+    })
+  }, [])
+  
+  // Prop-based focus mode (URL param for new windows) overrides viewMode
+  const effectiveFocusMode = isFocusedMode || viewMode === 'focus'
+  const effectiveCompactMode = viewMode === 'compact' || effectiveFocusMode
 
   // Window width tracking for responsive behavior
   const [windowWidth, setWindowWidth] = React.useState(window.innerWidth)
@@ -1018,8 +1041,8 @@ function AppShellContent({
       }, when: () => !document.querySelector('[role="dialog"]') && document.activeElement?.tagName !== 'TEXTAREA' },
       // Sidebar toggle (CMD+B)
       { key: 'b', cmd: true, action: () => setIsSidebarVisible(v => !v) },
-      // Focus mode toggle (CMD+.) - hides both sidebars
-      { key: '.', cmd: true, action: () => setIsFocusModeActive(v => !v) },
+      // View mode cycle (CMD+.) - cycles through full -> compact -> focus
+      { key: '.', cmd: true, action: cycleViewMode },
       // New chat
       { key: 'n', cmd: true, action: () => handleNewChat(true) },
       // Settings
@@ -1431,18 +1454,18 @@ function AppShellContent({
     storage.set(storage.KEYS.rightSidebarVisible, isRightSidebarVisible)
   }, [isRightSidebarVisible])
 
-  // Persist focus mode state to localStorage
+  // Persist view mode state to localStorage
   React.useEffect(() => {
-    storage.set(storage.KEYS.focusModeEnabled, isFocusModeActive)
-  }, [isFocusModeActive])
+    storage.set(storage.KEYS.viewMode, viewMode)
+  }, [viewMode])
 
-  // Listen for focus mode toggle from menu (View → Focus Mode)
+  // Listen for focus mode toggle from menu (View → Focus Mode) - now cycles view mode
   React.useEffect(() => {
     const cleanup = window.electronAPI.onMenuToggleFocusMode?.(() => {
-      setIsFocusModeActive(v => !v)
+      cycleViewMode()
     })
     return cleanup
-  }, [])
+  }, [cycleViewMode])
 
   // Listen for sidebar toggle from menu (View → Toggle Sidebar)
   React.useEffect(() => {
@@ -1941,7 +1964,7 @@ function AppShellContent({
         */}
         <div className="titlebar-drag-region fixed top-0 left-0 right-0 h-[50px] z-titlebar" />
 
-      {/* App Menu - fixed position, fades out in focused mode
+      {/* App Menu - fixed position, fades out in compact/focused mode
           On macOS: offset 86px to avoid stoplight controls
           On Windows/Linux: offset 12px (no stoplight controls) */}
       {(() => {
@@ -1949,11 +1972,11 @@ function AppShellContent({
         return (
           <motion.div
             initial={false}
-            animate={{ opacity: effectiveFocusMode ? 0 : 1 }}
+            animate={{ opacity: effectiveCompactMode ? 0 : 1 }}
             transition={springTransition}
             className={cn(
               "fixed top-0 h-[50px] z-overlay flex items-center titlebar-no-drag pr-2",
-              effectiveFocusMode && "pointer-events-none"
+              effectiveCompactMode && "pointer-events-none"
             )}
             style={{ left: menuLeftOffset, width: sidebarWidth - menuLeftOffset }}
           >
@@ -1969,11 +1992,39 @@ function AppShellContent({
               canGoBack={canGoBack}
               canGoForward={canGoForward}
               onToggleSidebar={() => setIsSidebarVisible(prev => !prev)}
-              onToggleFocusMode={() => setIsFocusModeActive(prev => !prev)}
+              onToggleFocusMode={cycleViewMode}
             />
           </motion.div>
         )
       })()}
+
+      {/* View Mode Toggle - Always visible in top left corner
+          Uses same offset as AppMenu to align properly */}
+      <div
+        className="fixed top-0 h-[50px] z-overlay flex items-center titlebar-no-drag"
+        style={{ left: isMac ? 86 : 12 }}
+      >
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={cycleViewMode}
+                aria-label="Toggle view mode"
+                className="flex items-center justify-center h-[28px] w-[28px] rounded-[6px] hover:bg-foreground/10 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring outline-none transition-colors"
+              >
+                {viewMode === 'full' && <LayoutGrid className="h-4 w-4 text-foreground/70" />}
+                {viewMode === 'compact' && <PanelLeft className="h-4 w-4 text-foreground/70" />}
+                {viewMode === 'focus' && <Maximize2 className="h-4 w-4 text-foreground/70" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {viewMode === 'full' && 'Full view (showing all panels)'}
+              {viewMode === 'compact' && 'Compact view (sidebar hidden)'}
+              {viewMode === 'focus' && 'Focus mode (chat only)'}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
 
       {/* === OUTER LAYOUT: Sidebar | Main Content === */}
       <div className="h-full flex items-stretch relative">
@@ -1984,8 +2035,8 @@ function AppShellContent({
         <motion.div
           initial={false}
           animate={{
-            width: effectiveFocusMode ? 0 : (isSidebarVisible ? sidebarWidth : 0),
-            opacity: effectiveFocusMode ? 0 : 1,
+            width: effectiveCompactMode ? 0 : (isSidebarVisible ? sidebarWidth : 0),
+            opacity: effectiveCompactMode ? 0 : 1,
           }}
           transition={isResizing ? { duration: 0 } : springTransition}
           className="h-full overflow-hidden shrink-0 relative"
@@ -2301,8 +2352,8 @@ function AppShellContent({
               className="h-full flex flex-col min-w-0 bg-background shadow-middle rounded-l-[14px] rounded-r-[10px]"
             >
             <PanelHeader
-              title={isSidebarVisible ? listTitle : undefined}
-              compensateForStoplight={!isSidebarVisible}
+              title={(isSidebarVisible && !effectiveCompactMode) ? listTitle : undefined}
+              compensateForStoplight={effectiveCompactMode || !isSidebarVisible}
               actions={
                 <>
                   {/* Filter dropdown - available in ALL chat views.

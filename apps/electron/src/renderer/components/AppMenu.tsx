@@ -22,6 +22,14 @@ import {
   SETTINGS_ITEMS,
   getShortcutDisplay,
 } from "../../shared/menu-schema"
+
+/**
+ * View mode for the app layout:
+ * - 'full': Show all panels (left sidebar + session list + chat)
+ * - 'compact': Hide left sidebar (session list + chat only)
+ * - 'focus': Focus mode (chat only)
+ */
+export type ViewMode = 'full' | 'compact' | 'focus'
 import type { MenuItem, MenuSection, SettingsMenuItem } from "../../shared/menu-schema"
 import { SETTINGS_ICONS } from "./icons/SettingsIcons"
 
