@@ -485,9 +485,43 @@ function AppShellContent({
     openNewChat,
   } = contextValue
 
-  const [isSidebarVisible, setIsSidebarVisible] = React.useState(() => {
-    return storage.get(storage.KEYS.sidebarVisible, !defaultCollapsed)
+  // View mode state - single source of truth for layout visibility
+  // 'full': show all (sidebar + session list + chat)
+  // 'compact': hide sidebar, show session list + chat
+  // 'focus': hide both sidebar and session list, show only chat
+  const [viewMode, setViewMode] = React.useState<ViewMode>(() => {
+    // Migrate from old state if present
+    const oldFocusMode = storage.get(storage.KEYS.focusModeEnabled, false)
+    if (oldFocusMode) return 'focus'
+    
+    const oldSidebarVisible = storage.get(storage.KEYS.sidebarVisible, true)
+    if (!oldSidebarVisible) return 'compact'
+    
+    return storage.get<ViewMode>(storage.KEYS.viewMode, 'full')
   })
+  
+  // Cycle through view modes: full -> compact -> focus -> full
+  const cycleViewMode = React.useCallback(() => {
+    setViewMode(current => {
+      switch (current) {
+        case 'full': return 'compact'
+        case 'compact': return 'focus'
+        case 'focus': return 'full'
+      }
+    })
+  }, [])
+  
+  // Toggle sidebar visibility (Cmd+B behavior): toggles between full and compact
+  const toggleSidebar = React.useCallback(() => {
+    setViewMode(current => current === 'full' ? 'compact' : 'full')
+  }, [])
+  
+  // Derived states from viewMode (prop-based focus mode overrides)
+  const effectiveFocusMode = isFocusedMode || viewMode === 'focus'
+  const effectiveCompactMode = viewMode === 'compact' || effectiveFocusMode
+  // For backwards compatibility with existing code that uses isSidebarVisible
+  const isSidebarVisible = viewMode === 'full' && !isFocusedMode
+
   const [sidebarWidth, setSidebarWidth] = React.useState(() => {
     return storage.get(storage.KEYS.sidebarWidth, 220)
   })
@@ -504,34 +538,6 @@ function AppShellContent({
     return storage.get(storage.KEYS.rightSidebarWidth, 300)
   })
   const [skipRightSidebarAnimation, setSkipRightSidebarAnimation] = React.useState(false)
-
-  // View mode state - controls visibility of sidebar and session list
-  // 'full': show all (sidebar + session list + chat)
-  // 'compact': hide sidebar, show session list + chat
-  // 'focus': hide both sidebar and session list, show only chat
-  const [viewMode, setViewMode] = React.useState<ViewMode>(() => {
-    // Migrate from old focusModeEnabled if present
-    const oldFocusMode = storage.get(storage.KEYS.focusModeEnabled, false)
-    if (oldFocusMode) {
-      return 'focus'
-    }
-    return storage.get<ViewMode>(storage.KEYS.viewMode, 'full')
-  })
-  
-  // Cycle through view modes: full -> compact -> focus -> full
-  const cycleViewMode = React.useCallback(() => {
-    setViewMode(current => {
-      switch (current) {
-        case 'full': return 'compact'
-        case 'compact': return 'focus'
-        case 'focus': return 'full'
-      }
-    })
-  }, [])
-  
-  // Prop-based focus mode (URL param for new windows) overrides viewMode
-  const effectiveFocusMode = isFocusedMode || viewMode === 'focus'
-  const effectiveCompactMode = viewMode === 'compact' || effectiveFocusMode
 
   // Window width tracking for responsive behavior
   const [windowWidth, setWindowWidth] = React.useState(window.innerWidth)
@@ -1040,7 +1046,7 @@ function AppShellContent({
         }
       }, when: () => !document.querySelector('[role="dialog"]') && document.activeElement?.tagName !== 'TEXTAREA' },
       // Sidebar toggle (CMD+B)
-      { key: 'b', cmd: true, action: () => setIsSidebarVisible(v => !v) },
+      { key: 'b', cmd: true, action: toggleSidebar },
       // View mode cycle (CMD+.) - cycles through full -> compact -> focus
       { key: '.', cmd: true, action: cycleViewMode },
       // New chat
@@ -1444,11 +1450,6 @@ function AppShellContent({
     storage.set(storage.KEYS.expandedFolders, [...expandedFolders], activeWorkspaceId)
   }, [expandedFolders, activeWorkspaceId])
 
-  // Persist sidebar visibility to localStorage
-  React.useEffect(() => {
-    storage.set(storage.KEYS.sidebarVisible, isSidebarVisible)
-  }, [isSidebarVisible])
-
   // Persist right sidebar visibility to localStorage
   React.useEffect(() => {
     storage.set(storage.KEYS.rightSidebarVisible, isRightSidebarVisible)
@@ -1470,10 +1471,10 @@ function AppShellContent({
   // Listen for sidebar toggle from menu (View → Toggle Sidebar)
   React.useEffect(() => {
     const cleanup = window.electronAPI.onMenuToggleSidebar?.(() => {
-      setIsSidebarVisible(v => !v)
+      toggleSidebar()
     })
     return cleanup
-  }, [])
+  }, [toggleSidebar])
 
   // Persist per-view filter map to localStorage (workspace-scoped)
   React.useEffect(() => {
@@ -1991,7 +1992,7 @@ function AppShellContent({
               onForward={goForward}
               canGoBack={canGoBack}
               canGoForward={canGoForward}
-              onToggleSidebar={() => setIsSidebarVisible(prev => !prev)}
+              onToggleSidebar={toggleSidebar}
               onToggleFocusMode={cycleViewMode}
             />
           </motion.div>
@@ -2035,8 +2036,8 @@ function AppShellContent({
         <motion.div
           initial={false}
           animate={{
-            width: effectiveCompactMode ? 0 : (isSidebarVisible ? sidebarWidth : 0),
-            opacity: effectiveCompactMode ? 0 : 1,
+            width: isSidebarVisible ? sidebarWidth : 0,
+            opacity: isSidebarVisible ? 1 : 0,
           }}
           transition={isResizing ? { duration: 0 } : springTransition}
           className="h-full overflow-hidden shrink-0 relative"
