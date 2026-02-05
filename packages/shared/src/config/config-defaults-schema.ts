@@ -53,7 +53,7 @@ export const BUNDLED_CONFIG_DEFAULTS: ConfigDefaults = {
     colorTheme: 'xcode',
     anthropicBaseUrl: IDEA_BASE_URL,
     customModel: IDEA_DEFAULT_MODEL,
-    autoCapitalisation: true,
+    autoCapitalisation: false,
     sendMessageKey: 'enter',
     spellCheck: false,
   },
