@@ -228,16 +228,16 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     windowManager.closeWindow(event.sender.id)
   })
 
-  // Confirm close - on macOS, hide the app only for Cmd+W on main window.
-  // Otherwise (or on other platforms), force close the window.
+  // Confirm close - on macOS, hide the app when closing the last main window
+  // so the X button and Cmd+W behave consistently. Otherwise force close.
   // Called by renderer when it has no modals to close and wants to proceed.
   ipcMain.handle(IPC_CHANNELS.WINDOW_CONFIRM_CLOSE, (event) => {
     const webContentsId = event.sender.id
     if (process.platform === 'darwin') {
-      const closeIntent = windowManager.consumeCloseIntent(webContentsId)
+      windowManager.consumeCloseIntent(webContentsId)
       const isMainWindow = !windowManager.isFocusedModeWindow(webContentsId)
       const isLastMainWindow = isMainWindow && windowManager.getMainWindowCount() <= 1
-      if (closeIntent === 'shortcut' && isLastMainWindow) {
+      if (isLastMainWindow) {
         app.hide()
         return
       }
