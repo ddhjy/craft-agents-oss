@@ -651,6 +651,7 @@ export const RichTextInput = React.forwardRef<RichTextInputHandle, RichTextInput
     React.useEffect(() => {
       if (!divRef.current) return
       if (isInternalUpdate.current) return
+      if (isComposing.current) return // Skip sync during IME composition to avoid interrupting input
       if (lastValueRef.current === value) return
 
       // External value change - update content
