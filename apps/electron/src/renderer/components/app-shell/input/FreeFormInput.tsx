@@ -1326,7 +1326,7 @@ export function FreeFormInput({
           <div className="flex items-center gap-1 min-w-32 shrink overflow-hidden">
           {/* 1. Attach Files Badge */}
           <FreeFormInputContextBadge
-            icon={<Paperclip className="h-[18px] w-[18px]" strokeWidth={1.5} />}
+            icon={<Paperclip className="h-4 w-4" strokeWidth={1.5} />}
             // Show count ("1 file" / "X files") instead of filename for cleaner UI
             label={attachments.length > 0
               ? attachments.length === 1
@@ -1349,7 +1349,7 @@ export function FreeFormInput({
                 buttonRef={sourceButtonRef}
                 icon={
                   optimisticSourceSlugs.length === 0 ? (
-                    <DatabaseZap className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                    <DatabaseZap className="h-4 w-4" strokeWidth={1.5} />
                   ) : (
                     <div className="flex items-center -ml-0.5">
                       {(() => {
@@ -1981,7 +1981,7 @@ function WorkingDirectoryBadge({
       <PopoverTrigger asChild>
         <span className="shrink min-w-0 overflow-hidden">
           <FreeFormInputContextBadge
-            icon={<Home className="h-[18px] w-[18px]" strokeWidth={1.5} />}
+            icon={<Home className="h-4 w-4" strokeWidth={1.5} />}
             label={folderName}
             isExpanded={isEmptySession}
             hasSelection={hasFolder}
