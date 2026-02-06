@@ -317,34 +317,6 @@ export default function AppSettingsPage() {
               </SettingsCard>
             </SettingsSection>
 
-            {/* Auto New Chat */}
-            <SettingsSection title="Auto New Chat" description="Start a fresh conversation when returning after being away.">
-              <SettingsCard>
-                <SettingsToggle
-                  label="Auto new chat on focus"
-                  description="Automatically start a new chat when the app regains focus after being idle."
-                  checked={autoNewChatEnabled}
-                  onCheckedChange={handleAutoNewChatEnabledChange}
-                />
-                {autoNewChatEnabled && (
-                  <SettingsSelectRow
-                    label="Idle timeout"
-                    description="How long to wait before starting a new chat."
-                    value={autoNewChatTimeout}
-                    onValueChange={handleAutoNewChatTimeoutChange}
-                    options={[
-                      { value: '5', label: '5 minutes' },
-                      { value: '10', label: '10 minutes' },
-                      { value: '15', label: '15 minutes' },
-                      { value: '20', label: '20 minutes' },
-                      { value: '30', label: '30 minutes' },
-                      { value: '60', label: '1 hour' },
-                    ]}
-                  />
-                )}
-              </SettingsCard>
-            </SettingsSection>
-
             {/* Global Shortcut */}
             <SettingsSection title="Global Shortcut" description="Activate the app from anywhere using a keyboard shortcut.">
               <SettingsCard>
@@ -374,6 +346,34 @@ export default function AppSettingsPage() {
                       {isRecordingShortcut ? 'Press shortcut...' : formatShortcutDisplay(globalShortcut)}
                     </button>
                   </SettingsRow>
+                )}
+              </SettingsCard>
+            </SettingsSection>
+
+            {/* Auto New Chat */}
+            <SettingsSection title="Auto New Chat" description="Start a fresh conversation when returning after being away.">
+              <SettingsCard>
+                <SettingsToggle
+                  label="Auto new chat on focus"
+                  description="Automatically start a new chat when the app regains focus after being idle."
+                  checked={autoNewChatEnabled}
+                  onCheckedChange={handleAutoNewChatEnabledChange}
+                />
+                {autoNewChatEnabled && (
+                  <SettingsSelectRow
+                    label="Idle timeout"
+                    description="How long to wait before starting a new chat."
+                    value={autoNewChatTimeout}
+                    onValueChange={handleAutoNewChatTimeoutChange}
+                    options={[
+                      { value: '5', label: '5 minutes' },
+                      { value: '10', label: '10 minutes' },
+                      { value: '15', label: '15 minutes' },
+                      { value: '20', label: '20 minutes' },
+                      { value: '30', label: '30 minutes' },
+                      { value: '60', label: '1 hour' },
+                    ]}
+                  />
                 )}
               </SettingsCard>
             </SettingsSection>
