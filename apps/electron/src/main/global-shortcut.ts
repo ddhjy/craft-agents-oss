@@ -26,40 +26,48 @@ export function getGlobalShortcutSettings(): { enabled: boolean; shortcut: strin
 }
 
 /**
- * Activate the app - bring all windows to foreground
+ * Toggle the app - if in foreground, hide it; if in background, bring to foreground
  */
 function activateApp(): void {
-  mainLog.info('[GlobalShortcut] Activating app')
-
-  // On macOS, show the app in dock and bring to front
-  if (process.platform === 'darwin' && app.dock) {
-    app.dock.show()
-  }
-
-  // Get all windows and bring them to front
   const windows = BrowserWindow.getAllWindows()
   if (windows.length === 0) {
-    mainLog.info('[GlobalShortcut] No windows to activate')
+    mainLog.info('[GlobalShortcut] No windows to toggle')
     return
   }
 
-  // Focus the first window (or the most recently focused one)
-  for (const win of windows) {
-    if (win.isMinimized()) {
-      win.restore()
-    }
-    if (!win.isVisible()) {
-      win.show()
-    }
-  }
-
-  // Focus the first window
   const mainWindow = windows[0]
-  mainWindow.focus()
+  const isAppInForeground = mainWindow.isFocused() && mainWindow.isVisible()
 
-  // On macOS, also activate the app itself
-  if (process.platform === 'darwin') {
-    app.focus({ steal: true })
+  if (isAppInForeground) {
+    mainLog.info('[GlobalShortcut] Hiding app')
+    if (process.platform === 'darwin') {
+      app.hide()
+    } else {
+      for (const win of windows) {
+        win.minimize()
+      }
+    }
+  } else {
+    mainLog.info('[GlobalShortcut] Activating app')
+
+    if (process.platform === 'darwin' && app.dock) {
+      app.dock.show()
+    }
+
+    for (const win of windows) {
+      if (win.isMinimized()) {
+        win.restore()
+      }
+      if (!win.isVisible()) {
+        win.show()
+      }
+    }
+
+    mainWindow.focus()
+
+    if (process.platform === 'darwin') {
+      app.focus({ steal: true })
+    }
   }
 }
 
