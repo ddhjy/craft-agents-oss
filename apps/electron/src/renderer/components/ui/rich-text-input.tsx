@@ -677,7 +677,9 @@ export const RichTextInput = React.forwardRef<RichTextInputHandle, RichTextInput
       // 2. The element is actually focused (user is actively editing)
       // This prevents stealing focus during session changes when search is active.
       // Also skip during the protection period after focus to avoid interfering with IME initialization.
-      if (!recentlyFocusedRef.current && (pendingCursorRef.current !== null || document.activeElement === divRef.current)) {
+      // Skip when value is empty - no need to set cursor and this avoids interfering with IME
+      // (e.g., after sending a message, the input is cleared and we shouldn't touch selection).
+      if (!recentlyFocusedRef.current && value && (pendingCursorRef.current !== null || document.activeElement === divRef.current)) {
         const cursorPos = pendingCursorRef.current ?? cursorPositionRef.current ?? value.length
         setCursorPosition(divRef.current, cursorPos)
         pendingCursorRef.current = null // Clear after use
