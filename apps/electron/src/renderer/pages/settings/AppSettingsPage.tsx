@@ -318,11 +318,11 @@ export default function AppSettingsPage() {
             </SettingsSection>
 
             {/* Global Shortcut */}
-            <SettingsSection title="Global Shortcut" description="Activate the app from anywhere using a keyboard shortcut.">
+            <SettingsSection title="Global Shortcut" description="Toggle the app visibility from anywhere using a keyboard shortcut.">
               <SettingsCard>
                 <SettingsToggle
                   label="Enable global shortcut"
-                  description="Press the shortcut to bring the app to foreground from any application."
+                  description="Press the shortcut to show the app, or hide it if already in foreground."
                   checked={globalShortcutEnabled}
                   onCheckedChange={handleGlobalShortcutEnabledChange}
                 />
