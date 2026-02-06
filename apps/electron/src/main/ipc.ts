@@ -1170,20 +1170,28 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       { id: 'vscode', name: 'VS Code', appPath: '/Applications/Visual Studio Code.app' },
       { id: 'androidstudio', name: 'Android Studio', appPath: '/Applications/Android Studio.app' },
       { id: 'fork', name: 'Fork', appPath: '/Applications/Fork.app' },
+      { id: 'trae-cn', name: 'Trae CN', appPath: '/Applications/Trae CN.app' },
     ]
 
-    let shortcutNum = 1
     for (const appDef of appChecks) {
       // Finder and Terminal are always available on macOS
       if (appDef.appPath === null || existsSync(appDef.appPath)) {
         apps.push({
           id: appDef.id,
           name: appDef.name,
-          shortcut: shortcutNum <= 9 ? `${shortcutNum}` : undefined,
         })
-        shortcutNum++
       }
     }
+
+    // Sort by usage count for this directory (descending), then assign shortcuts
+    const config = loadStoredConfig()
+    const dirUsageCount = config?.appUsageCount?.[_path] || {}
+    apps.sort((a, b) => (dirUsageCount[b.id] || 0) - (dirUsageCount[a.id] || 0))
+
+    // Assign shortcuts after sorting
+    apps.forEach((app, index) => {
+      app.shortcut = index < 9 ? `${index + 1}` : undefined
+    })
 
     return apps
   })
@@ -1205,6 +1213,7 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
           'xcode': ['open', '-a', 'BitSkyXcode-16.0.app', safePath],
           'antigravity': ['open', '-a', 'Antigravity', safePath],
           'sublime-merge': ['open', '-a', 'Sublime Merge', safePath],
+          'trae-cn': ['open', '-a', 'Trae CN', safePath],
         }
 
         const cmd = appCommands[appId]
@@ -1217,6 +1226,16 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
       } else {
         // Non-macOS: Just open with default app
         await shell.openPath(safePath)
+      }
+
+      // Update app usage count for this directory
+      const config = loadStoredConfig()
+      if (config) {
+        const allUsageCount = config.appUsageCount || {}
+        const dirUsageCount = allUsageCount[path] || {}
+        dirUsageCount[appId] = (dirUsageCount[appId] || 0) + 1
+        allUsageCount[path] = dirUsageCount
+        saveConfig({ ...config, appUsageCount: allUsageCount })
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error'
