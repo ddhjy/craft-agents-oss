@@ -86,8 +86,8 @@ export const FreeFormInputContextBadge = React.forwardRef<HTMLButtonElement, Fre
           className
         )}
       >
-        {/* Icon area */}
-        <span className="shrink-0 flex items-center">
+        {/* Icon area - antialiased for smooth rendering */}
+        <span className="shrink-0 flex items-center [&_svg]:antialiased [&_svg]:[transform:translateZ(0)]">
           {icon}
         </span>
 

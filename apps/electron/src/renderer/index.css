@@ -6,6 +6,20 @@
 @source "../../../../packages/ui/src/**/*.{tsx,ts,jsx,js}";
 
 /* =============================================================================
+   SVG ANTI-ALIASING
+   
+   Force GPU acceleration and subpixel antialiasing for crisp icon rendering.
+   This eliminates jagged edges on small SVG icons.
+============================================================================= */
+svg {
+  shape-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* =============================================================================
    ANIMATABLE CSS CUSTOM PROPERTIES
 
    Register theme color variables as animatable using @property.

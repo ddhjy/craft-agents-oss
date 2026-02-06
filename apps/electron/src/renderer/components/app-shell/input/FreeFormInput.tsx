@@ -12,8 +12,9 @@ import {
   Loader2,
   Copy,
   GitBranch,
+  Home,
+  Folder,
 } from 'lucide-react'
-import { Icon_Home, Icon_Folder } from '@craft-agent/ui'
 
 import * as storage from '@/lib/local-storage'
 
@@ -1325,7 +1326,7 @@ export function FreeFormInput({
           <div className="flex items-center gap-1 min-w-32 shrink overflow-hidden">
           {/* 1. Attach Files Badge */}
           <FreeFormInputContextBadge
-            icon={<Paperclip className="h-4 w-4" />}
+            icon={<Paperclip className="h-[18px] w-[18px]" strokeWidth={1.5} />}
             // Show count ("1 file" / "X files") instead of filename for cleaner UI
             label={attachments.length > 0
               ? attachments.length === 1
@@ -1348,7 +1349,7 @@ export function FreeFormInput({
                 buttonRef={sourceButtonRef}
                 icon={
                   optimisticSourceSlugs.length === 0 ? (
-                    <DatabaseZap className="h-4 w-4" />
+                    <DatabaseZap className="h-[18px] w-[18px]" strokeWidth={1.5} />
                   ) : (
                     <div className="flex items-center -ml-0.5">
                       {(() => {
@@ -1980,7 +1981,7 @@ function WorkingDirectoryBadge({
       <PopoverTrigger asChild>
         <span className="shrink min-w-0 overflow-hidden">
           <FreeFormInputContextBadge
-            icon={<Icon_Home className="h-4 w-4" />}
+            icon={<Home className="h-[18px] w-[18px]" strokeWidth={1.5} />}
             label={folderName}
             isExpanded={isEmptySession}
             hasSelection={hasFolder}
@@ -2021,7 +2022,7 @@ function WorkingDirectoryBadge({
                 className={cn(MENU_ITEM_STYLE, 'pointer-events-none bg-foreground/5')}
                 disabled
               >
-                <Icon_Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <Folder className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.5} />
                 <span className="flex-1 min-w-0 truncate">
                   <span>{folderName}</span>
                   <span className="text-muted-foreground ml-1.5">{formatPathForDisplay(normalizedWorkingDirectory ?? '', homeDir)}</span>
@@ -2045,7 +2046,7 @@ function WorkingDirectoryBadge({
                   onSelect={() => handleSelectRecent(path)}
                   className={cn(MENU_ITEM_STYLE, 'data-[selected=true]:bg-foreground/5')}
                 >
-                  <Icon_Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <Folder className="h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.5} />
                   <span className="flex-1 min-w-0 truncate">
                     <span>{recentFolderName}</span>
                     <span className="text-muted-foreground ml-1.5">{formatPathForDisplay(path, homeDir)}</span>
