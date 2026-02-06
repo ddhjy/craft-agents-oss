@@ -2782,4 +2782,15 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
     return setGlobalShortcutSettings(enabled, shortcut)
   })
 
+  // Get auto launch (launch at startup) setting
+  ipcMain.handle(IPC_CHANNELS.AUTO_LAUNCH_GET, () => {
+    const settings = app.getLoginItemSettings()
+    return settings.openAtLogin
+  })
+
+  // Set auto launch (launch at startup) setting
+  ipcMain.handle(IPC_CHANNELS.AUTO_LAUNCH_SET, (_event, enabled: boolean) => {
+    app.setLoginItemSettings({ openAtLogin: enabled })
+  })
+
 }

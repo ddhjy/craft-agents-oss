@@ -794,6 +794,10 @@ export const IPC_CHANNELS = {
   // Global shortcut (activate app)
   GLOBAL_SHORTCUT_GET: 'globalShortcut:get',
   GLOBAL_SHORTCUT_SET: 'globalShortcut:set',
+
+  // Auto launch (launch at startup)
+  AUTO_LAUNCH_GET: 'autoLaunch:get',
+  AUTO_LAUNCH_SET: 'autoLaunch:set',
 } as const
 
 // Re-import types for ElectronAPI
@@ -1098,6 +1102,10 @@ export interface ElectronAPI {
   // Global shortcut (activate app)
   getGlobalShortcut(): Promise<{ enabled: boolean; shortcut: string }>
   setGlobalShortcut(enabled: boolean, shortcut: string): Promise<{ success: boolean; error?: string }>
+
+  // Auto launch (launch at startup)
+  getAutoLaunch(): Promise<boolean>
+  setAutoLaunch(enabled: boolean): Promise<void>
 }
 
 /**

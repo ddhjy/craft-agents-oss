@@ -67,6 +67,9 @@ export default function AppSettingsPage() {
   const [shortcutError, setShortcutError] = useState<string | null>(null)
   const [isRecordingShortcut, setIsRecordingShortcut] = useState(false)
 
+  // Auto launch state
+  const [autoLaunchEnabled, setAutoLaunchEnabled] = useState(false)
+
   // Auto-update state
   const updateChecker = useUpdateChecker()
   const [isCheckingForUpdates, setIsCheckingForUpdates] = useState(false)
@@ -84,15 +87,17 @@ export default function AppSettingsPage() {
   const loadConnectionInfo = useCallback(async () => {
     if (!window.electronAPI) return
     try {
-      const [billing, notificationsOn, prefsResult, shortcutSettings] = await Promise.all([
+      const [billing, notificationsOn, prefsResult, shortcutSettings, autoLaunch] = await Promise.all([
         window.electronAPI.getApiSetup(),
         window.electronAPI.getNotificationsEnabled(),
         window.electronAPI.readPreferences(),
         window.electronAPI.getGlobalShortcut(),
+        window.electronAPI.getAutoLaunch(),
       ])
       setAuthType(billing.authType)
       setHasCredential(billing.hasCredential)
       setNotificationsEnabled(notificationsOn)
+      setAutoLaunchEnabled(autoLaunch)
 
       // Load global shortcut settings
       setGlobalShortcutEnabled(shortcutSettings.enabled)
@@ -156,6 +161,11 @@ export default function AppSettingsPage() {
   const handleNotificationsEnabledChange = useCallback(async (enabled: boolean) => {
     setNotificationsEnabled(enabled)
     await window.electronAPI.setNotificationsEnabled(enabled)
+  }, [])
+
+  const handleAutoLaunchEnabledChange = useCallback(async (enabled: boolean) => {
+    setAutoLaunchEnabled(enabled)
+    await window.electronAPI.setAutoLaunch(enabled)
   }, [])
 
   // Save auto new chat settings to preferences.json
@@ -291,6 +301,18 @@ export default function AppSettingsPage() {
                   description="Get notified when AI finishes working in a chat."
                   checked={notificationsEnabled}
                   onCheckedChange={handleNotificationsEnabledChange}
+                />
+              </SettingsCard>
+            </SettingsSection>
+
+            {/* Launch at Startup */}
+            <SettingsSection title="Startup">
+              <SettingsCard>
+                <SettingsToggle
+                  label="Launch at startup"
+                  description="Automatically start the app when you log in to your computer."
+                  checked={autoLaunchEnabled}
+                  onCheckedChange={handleAutoLaunchEnabledChange}
                 />
               </SettingsCard>
             </SettingsSection>

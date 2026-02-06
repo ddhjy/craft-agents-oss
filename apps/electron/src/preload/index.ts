@@ -485,6 +485,10 @@ const api: ElectronAPI = {
   setGlobalShortcut: (enabled: boolean, shortcut: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.GLOBAL_SHORTCUT_SET, enabled, shortcut),
 
+  // Auto launch (launch at startup)
+  getAutoLaunch: () => ipcRenderer.invoke(IPC_CHANNELS.AUTO_LAUNCH_GET) as Promise<boolean>,
+  setAutoLaunch: (enabled: boolean) => ipcRenderer.invoke(IPC_CHANNELS.AUTO_LAUNCH_SET, enabled),
+
   // Menu actions (for unified Craft menu)
   menuQuit: () => ipcRenderer.invoke(IPC_CHANNELS.MENU_QUIT),
   menuNewWindow: () => ipcRenderer.invoke(IPC_CHANNELS.MENU_NEW_WINDOW),
