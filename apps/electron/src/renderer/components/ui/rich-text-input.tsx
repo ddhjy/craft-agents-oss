@@ -503,6 +503,8 @@ export const RichTextInput = React.forwardRef<RichTextInputHandle, RichTextInput
     const isInternalUpdate = React.useRef(false)
     // Pending cursor position to restore after external value update (e.g., after @mention selection)
     const pendingCursorRef = React.useRef<number | null>(null)
+    // Track recent focus to avoid cursor operations that can interfere with IME initialization
+    const recentlyFocusedRef = React.useRef(false)
 
     const skillSlugs = React.useMemo(() => skills.map(s => s.slug), [skills])
     const sourceSlugs = React.useMemo(() => sources.map(s => s.config.slug), [sources])
@@ -635,6 +637,14 @@ export const RichTextInput = React.forwardRef<RichTextInputHandle, RichTextInput
     // Handle focus
     const handleFocus = React.useCallback((e: React.FocusEvent<HTMLDivElement>) => {
       setIsFocused(true)
+      // Set protection period to avoid cursor operations that can interfere with IME initialization.
+      // This is especially important when switching sessions - the new input gets focus
+      // and if we immediately manipulate the selection, it can break IME composition state.
+      recentlyFocusedRef.current = true
+      // Clear after a short delay - 100ms is enough for IME to initialize
+      setTimeout(() => {
+        recentlyFocusedRef.current = false
+      }, 100)
       // Tell browser to use <br> instead of <div> for line breaks.
       // This prevents div-wrapping when typing before non-editable spans (badges).
       document.execCommand('defaultParagraphSeparator', false, 'br')
@@ -666,7 +676,8 @@ export const RichTextInput = React.forwardRef<RichTextInputHandle, RichTextInput
       // 1. We have a pending position from setSelectionRange (explicit programmatic positioning), OR
       // 2. The element is actually focused (user is actively editing)
       // This prevents stealing focus during session changes when search is active.
-      if (pendingCursorRef.current !== null || document.activeElement === divRef.current) {
+      // Also skip during the protection period after focus to avoid interfering with IME initialization.
+      if (!recentlyFocusedRef.current && (pendingCursorRef.current !== null || document.activeElement === divRef.current)) {
         const cursorPos = pendingCursorRef.current ?? cursorPositionRef.current ?? value.length
         setCursorPosition(divRef.current, cursorPos)
         pendingCursorRef.current = null // Clear after use
