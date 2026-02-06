@@ -252,7 +252,7 @@ const PROCESSING_MESSAGES = [
  * Format elapsed time: "45s" under a minute, "1:02" for 1+ minutes
  */
 function formatElapsed(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`
+  if (seconds < 60) return `1m`
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
