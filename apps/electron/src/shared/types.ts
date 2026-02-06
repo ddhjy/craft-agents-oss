@@ -1199,6 +1199,8 @@ export type RightSidebarPanel =
  * - 'flagged': Only flagged sessions
  * - 'state': Sessions with specific status ID
  * - 'label': Sessions with specific label (includes descendants via tree hierarchy)
+ * - 'view': Sessions matching a saved view
+ * - 'workingDir': Sessions associated with a specific working directory
  */
 export type ChatFilter =
   | { kind: 'allChats' }
@@ -1206,6 +1208,7 @@ export type ChatFilter =
   | { kind: 'state'; stateId: string }
   | { kind: 'label'; labelId: string }
   | { kind: 'view'; viewId: string }
+  | { kind: 'workingDir'; workingDir: string }
 
 /**
  * Settings subpage options
@@ -1343,6 +1346,7 @@ export const getNavigationStateKey = (state: NavigationState): string => {
   if (f.kind === 'state') base = `state:${f.stateId}`
   else if (f.kind === 'label') base = `label:${f.labelId}`
   else if (f.kind === 'view') base = `view:${f.viewId}`
+  else if (f.kind === 'workingDir') base = `workingDir:${f.workingDir}`
   else base = f.kind
   if (state.details) {
     return `${base}/chat/${state.details.sessionId}`
@@ -1401,6 +1405,10 @@ export const parseNavigationStateKey = (key: string): NavigationState | null => 
       const viewId = filterKey.slice(5)
       if (!viewId) return null
       filter = { kind: 'view', viewId }
+    } else if (filterKey.startsWith('workingDir:')) {
+      const workingDir = filterKey.slice(11)
+      if (!workingDir) return null
+      filter = { kind: 'workingDir', workingDir }
     } else {
       return null
     }

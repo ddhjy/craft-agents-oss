@@ -168,6 +168,8 @@ export function NavigationProvider({
             return session.isFlagged === true
           case 'state':
             return session.todoState === filter.stateId
+          case 'workingDir':
+            return session.workingDirectory === filter.workingDir
           default:
             return false
         }
@@ -264,10 +266,11 @@ export function NavigationProvider({
             await window.electronAPI.sessionCommand(session.id, { type: 'setLabels', labels: [parsed.params.label] })
           }
 
-          // Determine navigation filter — preserve status/label context if the new session was created with one
+          // Determine navigation filter — preserve status/label/workdir context if the new session was created with one
           const filter: import('../../shared/types').ChatFilter =
             parsed.params.status ? { kind: 'state', stateId: parsed.params.status } :
             parsed.params.label ? { kind: 'label', labelId: parsed.params.label } :
+            parsed.params.workdir ? { kind: 'workingDir', workingDir: parsed.params.workdir } :
             { kind: 'allChats' }
 
           setSession({ selected: session.id })

@@ -231,6 +231,9 @@ function sessionMatchesCurrentFilter(
       if (currentFilter.viewId === '__all__') return matched.length > 0
       return matched.some(v => v.id === currentFilter.viewId)
 
+    case 'workingDir':
+      return session.workingDirectory === currentFilter.workingDir
+
     default:
       // Exhaustive check - TypeScript will error if we miss a case
       const _exhaustive: never = currentFilter
@@ -1087,6 +1090,8 @@ export function SessionList({
       navigate(routes.view.flagged(item.id))
     } else if (currentFilter.kind === 'state') {
       navigate(routes.view.state(currentFilter.stateId, item.id))
+    } else if (currentFilter.kind === 'workingDir') {
+      navigate(routes.view.workingDir(currentFilter.workingDir, item.id))
     }
     // Scroll the selected item into view
     requestAnimationFrame(() => {
@@ -1249,10 +1254,11 @@ export function SessionList({
         <EmptyContent>
           <button
             onClick={() => {
-              // Create a new session, applying the current filter's status/label if applicable
-              const params: { status?: string; label?: string } = {}
+              // Create a new session, applying the current filter's status/label/workdir if applicable
+              const params: { status?: string; label?: string; workdir?: string } = {}
               if (currentFilter?.kind === 'state') params.status = currentFilter.stateId
               else if (currentFilter?.kind === 'label') params.label = currentFilter.labelId
+              else if (currentFilter?.kind === 'workingDir') params.workdir = currentFilter.workingDir
               navigate(routes.action.newChat(Object.keys(params).length > 0 ? params : undefined))
             }}
             className="inline-flex items-center h-7 px-3 text-xs font-medium rounded-[8px] bg-background shadow-minimal hover:bg-foreground/[0.03] transition-colors"
@@ -1346,6 +1352,8 @@ export function SessionList({
                             navigate(routes.view.flagged(item.id))
                           } else if (currentFilter.kind === 'state') {
                             navigate(routes.view.state(currentFilter.stateId, item.id))
+                          } else if (currentFilter.kind === 'workingDir') {
+                            navigate(routes.view.workingDir(currentFilter.workingDir, item.id))
                           }
                           onSessionSelect?.(item)
                         }}
@@ -1394,6 +1402,8 @@ export function SessionList({
                             navigate(routes.view.flagged(item.id))
                           } else if (currentFilter.kind === 'state') {
                             navigate(routes.view.state(currentFilter.stateId, item.id))
+                          } else if (currentFilter.kind === 'workingDir') {
+                            navigate(routes.view.workingDir(currentFilter.workingDir, item.id))
                           }
                           onSessionSelect?.(item)
                         }}
@@ -1443,6 +1453,8 @@ export function SessionList({
                           navigate(routes.view.flagged(item.id))
                         } else if (currentFilter.kind === 'state') {
                           navigate(routes.view.state(currentFilter.stateId, item.id))
+                        } else if (currentFilter.kind === 'workingDir') {
+                          navigate(routes.view.workingDir(currentFilter.workingDir, item.id))
                         }
                         onSessionSelect?.(item)
                       }}
