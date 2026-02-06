@@ -480,6 +480,11 @@ const api: ElectronAPI = {
   browseForGitBash: () => ipcRenderer.invoke(IPC_CHANNELS.GITBASH_BROWSE),
   setGitBashPath: (path: string) => ipcRenderer.invoke(IPC_CHANNELS.GITBASH_SET_PATH, path),
 
+  // Global shortcut (activate app)
+  getGlobalShortcut: () => ipcRenderer.invoke(IPC_CHANNELS.GLOBAL_SHORTCUT_GET),
+  setGlobalShortcut: (enabled: boolean, shortcut: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.GLOBAL_SHORTCUT_SET, enabled, shortcut),
+
   // Menu actions (for unified Craft menu)
   menuQuit: () => ipcRenderer.invoke(IPC_CHANNELS.MENU_QUIT),
   menuNewWindow: () => ipcRenderer.invoke(IPC_CHANNELS.MENU_NEW_WINDOW),

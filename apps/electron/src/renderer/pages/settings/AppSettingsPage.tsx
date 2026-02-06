@@ -61,6 +61,12 @@ export default function AppSettingsPage() {
   const [autoNewChatEnabled, setAutoNewChatEnabled] = useState(false)
   const [autoNewChatTimeout, setAutoNewChatTimeout] = useState('10')
 
+  // Global shortcut state
+  const [globalShortcutEnabled, setGlobalShortcutEnabled] = useState(false)
+  const [globalShortcut, setGlobalShortcut] = useState('CommandOrControl+Shift+Space')
+  const [shortcutError, setShortcutError] = useState<string | null>(null)
+  const [isRecordingShortcut, setIsRecordingShortcut] = useState(false)
+
   // Auto-update state
   const updateChecker = useUpdateChecker()
   const [isCheckingForUpdates, setIsCheckingForUpdates] = useState(false)
@@ -78,14 +84,19 @@ export default function AppSettingsPage() {
   const loadConnectionInfo = useCallback(async () => {
     if (!window.electronAPI) return
     try {
-      const [billing, notificationsOn, prefsResult] = await Promise.all([
+      const [billing, notificationsOn, prefsResult, shortcutSettings] = await Promise.all([
         window.electronAPI.getApiSetup(),
         window.electronAPI.getNotificationsEnabled(),
         window.electronAPI.readPreferences(),
+        window.electronAPI.getGlobalShortcut(),
       ])
       setAuthType(billing.authType)
       setHasCredential(billing.hasCredential)
       setNotificationsEnabled(notificationsOn)
+
+      // Load global shortcut settings
+      setGlobalShortcutEnabled(shortcutSettings.enabled)
+      setGlobalShortcut(shortcutSettings.shortcut)
 
       // Load auto new chat settings
       if (prefsResult.exists && prefsResult.content) {
@@ -180,6 +191,91 @@ export default function AppSettingsPage() {
     await saveAutoNewChatSettings(autoNewChatEnabled, parseInt(value, 10))
   }, [autoNewChatEnabled, saveAutoNewChatSettings])
 
+  // Handle global shortcut enable/disable
+  const handleGlobalShortcutEnabledChange = useCallback(async (enabled: boolean) => {
+    setShortcutError(null)
+    const result = await window.electronAPI.setGlobalShortcut(enabled, globalShortcut)
+    if (result.success) {
+      setGlobalShortcutEnabled(enabled)
+    } else {
+      setShortcutError(result.error || 'Failed to set shortcut')
+    }
+  }, [globalShortcut])
+
+  // Format accelerator for display
+  const formatShortcutDisplay = useCallback((accelerator: string): string => {
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+    return accelerator
+      .replace(/CommandOrControl|CmdOrCtrl/gi, isMac ? '⌘' : 'Ctrl')
+      .replace(/Command|Cmd/gi, '⌘')
+      .replace(/Control|Ctrl/gi, isMac ? '⌃' : 'Ctrl')
+      .replace(/Alt|Option/gi, isMac ? '⌥' : 'Alt')
+      .replace(/Shift/gi, isMac ? '⇧' : 'Shift')
+      .replace(/\+/g, ' ')
+  }, [])
+
+  // Handle shortcut recording
+  const handleRecordShortcut = useCallback(() => {
+    setIsRecordingShortcut(true)
+    setShortcutError(null)
+  }, [])
+
+  // Handle keydown during recording
+  const handleKeyDown = useCallback(async (e: React.KeyboardEvent) => {
+    if (!isRecordingShortcut) return
+
+    e.preventDefault()
+    e.stopPropagation()
+
+    // Build accelerator from pressed keys
+    const parts: string[] = []
+    if (e.metaKey || e.ctrlKey) parts.push('CommandOrControl')
+    if (e.altKey) parts.push('Alt')
+    if (e.shiftKey) parts.push('Shift')
+
+    // Get the main key (ignore modifier keys alone)
+    const key = e.key
+    if (!['Control', 'Alt', 'Shift', 'Meta', 'Command'].includes(key)) {
+      // Map common keys to Electron accelerator format
+      let mappedKey = key.length === 1 ? key.toUpperCase() : key
+      if (key === ' ') mappedKey = 'Space'
+      if (key === 'Escape') mappedKey = 'Escape'
+      if (key === 'Enter') mappedKey = 'Enter'
+      if (key === 'Backspace') mappedKey = 'Backspace'
+      if (key === 'Tab') mappedKey = 'Tab'
+      if (key === 'ArrowUp') mappedKey = 'Up'
+      if (key === 'ArrowDown') mappedKey = 'Down'
+      if (key === 'ArrowLeft') mappedKey = 'Left'
+      if (key === 'ArrowRight') mappedKey = 'Right'
+
+      parts.push(mappedKey)
+
+      const newShortcut = parts.join('+')
+
+      // Must have at least one modifier
+      if (parts.length < 2) {
+        setShortcutError('Shortcut must include a modifier key (Cmd/Ctrl, Alt, or Shift)')
+        setIsRecordingShortcut(false)
+        return
+      }
+
+      // Try to register the new shortcut
+      const result = await window.electronAPI.setGlobalShortcut(globalShortcutEnabled, newShortcut)
+      if (result.success) {
+        setGlobalShortcut(newShortcut)
+        setShortcutError(null)
+      } else {
+        setShortcutError(result.error || 'Failed to set shortcut')
+      }
+      setIsRecordingShortcut(false)
+    }
+  }, [isRecordingShortcut, globalShortcutEnabled])
+
+  // Cancel recording on blur
+  const handleBlur = useCallback(() => {
+    setIsRecordingShortcut(false)
+  }, [])
+
   return (
     <div className="h-full flex flex-col">
       <PanelHeader title="App Settings" actions={<HeaderMenu route={routes.view.settings('app')} helpFeature="app-settings" />} />
@@ -223,6 +319,39 @@ export default function AppSettingsPage() {
                       { value: '60', label: '1 hour' },
                     ]}
                   />
+                )}
+              </SettingsCard>
+            </SettingsSection>
+
+            {/* Global Shortcut */}
+            <SettingsSection title="Global Shortcut" description="Activate the app from anywhere using a keyboard shortcut.">
+              <SettingsCard>
+                <SettingsToggle
+                  label="Enable global shortcut"
+                  description="Press the shortcut to bring the app to foreground from any application."
+                  checked={globalShortcutEnabled}
+                  onCheckedChange={handleGlobalShortcutEnabledChange}
+                />
+                {globalShortcutEnabled && (
+                  <SettingsRow
+                    label="Shortcut"
+                    description={shortcutError || "Click to record a new shortcut."}
+                  >
+                    <button
+                      className={`px-3 py-1.5 text-sm font-medium rounded-md border transition-colors ${
+                        isRecordingShortcut
+                          ? 'border-accent bg-accent/10 text-accent animate-pulse'
+                          : shortcutError
+                            ? 'border-destructive text-destructive'
+                            : 'border-border bg-muted hover:bg-muted/80'
+                      }`}
+                      onClick={handleRecordShortcut}
+                      onKeyDown={handleKeyDown}
+                      onBlur={handleBlur}
+                    >
+                      {isRecordingShortcut ? 'Press shortcut...' : formatShortcutDisplay(globalShortcut)}
+                    </button>
+                  </SettingsRow>
                 )}
               </SettingsCard>
             </SettingsSection>

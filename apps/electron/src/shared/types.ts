@@ -790,6 +790,10 @@ export const IPC_CHANNELS = {
   MENU_COPY: 'menu:copy',
   MENU_PASTE: 'menu:paste',
   MENU_SELECT_ALL: 'menu:selectAll',
+
+  // Global shortcut (activate app)
+  GLOBAL_SHORTCUT_GET: 'globalShortcut:get',
+  GLOBAL_SHORTCUT_SET: 'globalShortcut:set',
 } as const
 
 // Re-import types for ElectronAPI
@@ -1090,6 +1094,10 @@ export interface ElectronAPI {
   menuCopy(): Promise<void>
   menuPaste(): Promise<void>
   menuSelectAll(): Promise<void>
+
+  // Global shortcut (activate app)
+  getGlobalShortcut(): Promise<{ enabled: boolean; shortcut: string }>
+  setGlobalShortcut(enabled: boolean, shortcut: string): Promise<{ success: boolean; error?: string }>
 }
 
 /**

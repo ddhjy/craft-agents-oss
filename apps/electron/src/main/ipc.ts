@@ -2770,4 +2770,16 @@ export function registerIpcHandlers(sessionManager: SessionManager, windowManage
   // Note: Permission mode cycling settings (cyclablePermissionModes) are now workspace-level
   // and managed via WORKSPACE_SETTINGS_GET/UPDATE channels
 
+  // Get global shortcut settings
+  ipcMain.handle(IPC_CHANNELS.GLOBAL_SHORTCUT_GET, async () => {
+    const { getGlobalShortcutSettings } = await import('./global-shortcut')
+    return getGlobalShortcutSettings()
+  })
+
+  // Set global shortcut settings
+  ipcMain.handle(IPC_CHANNELS.GLOBAL_SHORTCUT_SET, async (_event, enabled: boolean, shortcut: string) => {
+    const { setGlobalShortcutSettings } = await import('./global-shortcut')
+    return setGlobalShortcutSettings(enabled, shortcut)
+  })
+
 }

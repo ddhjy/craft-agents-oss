@@ -81,6 +81,7 @@ import log, { isDebugMode, mainLog, getLogFilePath } from './logger'
 import { setPerfEnabled, enableDebug } from '@craft-agent/shared/utils'
 import { initNotificationService, clearBadgeCount, initBadgeIcon, initInstanceBadge } from './notifications'
 import { isUpdating } from './auto-update'
+import { initializeGlobalShortcut, cleanupGlobalShortcut } from './global-shortcut'
 
 // Initialize electron-log for renderer process support
 log.initialize()
@@ -371,6 +372,9 @@ app.whenReady().then(async () => {
       isSystemInterrupted = true
     })
 
+    // Initialize global shortcut (if previously enabled)
+    initializeGlobalShortcut()
+
     mainLog.info('App initialized successfully')
     if (isDebugMode) {
       mainLog.info('Debug mode enabled - logs at:', getLogFilePath())
@@ -462,6 +466,9 @@ app.on('before-quit', async (event) => {
     }
     // Clean up SessionManager resources (file watchers, timers, etc.)
     sessionManager.cleanup()
+
+    // Clean up global shortcuts
+    cleanupGlobalShortcut()
 
     // If update is in progress, let electron-updater handle the quit flow
     // Force exit breaks the NSIS installer on Windows
