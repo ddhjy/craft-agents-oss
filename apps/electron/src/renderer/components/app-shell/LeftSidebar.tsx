@@ -220,7 +220,7 @@ export function LeftSidebar({ links, isCollapsed, getItemProps, focusedItemId, i
           // ContextMenuTrigger with asChild sets data-state="open" on the button
           // so only the clicked item highlights, not the entire section.
           const content = (
-            <div className="group/section">
+            <div className="group/section min-w-0">
               {link.contextMenu ? (
                 <ContextMenu modal={true}>
                   <ContextMenuTrigger asChild>
@@ -271,7 +271,7 @@ export function LeftSidebar({ links, isCollapsed, getItemProps, focusedItemId, i
 
           // For nested items, wrap in motion.div for stagger animation
           return isNested ? (
-            <motion.div key={link.id} variants={itemVariants}>
+            <motion.div key={link.id} variants={itemVariants} className="min-w-0">
               {content}
             </motion.div>
           ) : (
@@ -364,7 +364,7 @@ function SortableStatusList({ items, onReorder, getItemProps, focusedItemId }: S
           onReorder={handleReorder}
           className="grid gap-0.5"
           renderItem={(item) => (
-            <div className="group/section">
+            <div className="group/section min-w-0">
               {item.contextMenu ? (
                 <ContextMenu modal={true}>
                   <ContextMenuTrigger asChild>
