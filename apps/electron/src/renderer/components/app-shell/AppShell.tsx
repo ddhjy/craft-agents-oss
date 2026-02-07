@@ -1945,8 +1945,11 @@ function AppShellContent({
   // Each node renders with condensed height (compact: true) since many labels expected.
   // Clicking any label navigates to its filter view; the chevron toggles expand/collapse.
   const buildLabelSidebarItems = useCallback((nodes: LabelTreeNode[]): any[] => {
-    // Sort labels alphabetically by display name at every level (parent + children)
+    // Sort labels by associated session count (descending), then alphabetically as tiebreaker
     const sorted = [...nodes].sort((a, b) => {
+      const countA = labelCounts[a.fullId] || 0
+      const countB = labelCounts[b.fullId] || 0
+      if (countA !== countB) return countB - countA
       const nameA = (a.label?.name || a.segment).toLowerCase()
       const nameB = (b.label?.name || b.segment).toLowerCase()
       return nameA.localeCompare(nameB)
