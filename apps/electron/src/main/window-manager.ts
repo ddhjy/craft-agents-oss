@@ -158,7 +158,7 @@ export class WindowManager {
     const window = new BrowserWindow({
       width: windowWidth,
       height: windowHeight,
-      minWidth: 800,
+      minWidth: 600,
       minHeight: 600,
       show: false, // Don't show until ready-to-show event (faster perceived startup)
       title: '',
