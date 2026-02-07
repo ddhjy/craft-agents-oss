@@ -437,6 +437,8 @@ interface ManagedSession {
   // Whether an async operation is ongoing (sharing, updating share, revoking, title regeneration)
   // Used for shimmer effect on session title
   isAsyncOperationOngoing?: boolean
+  // Monotonic counter for title generation - prevents stale async title results from overwriting newer ones
+  titleGenSeq: number
   // Preview of first user message (for sidebar display fallback)
   preview?: string
   // When the session was first created (ms timestamp from JSONL header)
@@ -994,6 +996,7 @@ export class SessionManager {
             model: meta.model,
             thinkingLevel: meta.thinkingLevel,
             lastMessageRole: meta.lastMessageRole,
+            titleGenSeq: 0,
             messageQueue: [],
             backgroundShellCommands: new Map(),
             messagesLoaded: false,  // Mark as not loaded
@@ -1560,6 +1563,7 @@ export class SessionManager {
       thinkingLevel: defaultThinkingLevel,
       // System prompt preset for mini agents
       systemPromptPreset: options?.systemPromptPreset,
+      titleGenSeq: 0,
       messageQueue: [],
       backgroundShellCommands: new Map(),
       messagesLoaded: true,  // New sessions don't need to load messages from disk
@@ -2357,6 +2361,8 @@ export class SessionManager {
       return { success: false, error: 'Session not found' }
     }
 
+    const mySeq = ++managed.titleGenSeq
+
     // Get recent user messages (last 3) for context
     // Exclude queued user messages (optimistic UI) to avoid generating a title from messages
     // that haven't actually been processed yet.
@@ -2379,6 +2385,28 @@ export class SessionManager {
       .slice(-1)[0]
 
     const assistantResponse = lastAssistantMsg?.content ?? ''
+
+    // Extract tool call summaries for better context
+    // The AI's understanding comes from tool use (reading files, running commands)
+    const toolSummaries = managed.messages
+      .filter((m) => m.role === 'tool' && m.toolName && m.toolStatus === 'completed')
+      .slice(-10)
+      .map((m) => {
+        const name = m.toolName || 'unknown'
+        // Extract key info based on tool type - only safe, non-secret fields
+        const input = m.toolInput || {}
+        if (name === 'read_file' || name === 'Read') return `${name}: ${input.path || ''}`
+        if (name === 'grep' || name === 'Grep') return `${name}: "${input.pattern || ''}" in ${input.path || ''}`
+        if (name === 'edit_file') return `${name}: ${input.path || ''}`
+        if (name === 'create_file') return `${name}: ${input.path || ''}`
+        if (name === 'list_directory') return `${name}: ${input.path || ''}`
+        if (name === 'run_command' || name === 'Bash') return `${name}: ${(String(input.command || input.cmd || '')).slice(0, 60)}`
+        return name
+      })
+      .filter((s, i, arr) => arr.indexOf(s) === i) // dedupe
+      .slice(0, 8) // cap at 8
+    const toolSummary = toolSummaries.length > 0 ? toolSummaries.join('\n') : undefined
+
     sessionLog.info(`refreshTitle: Calling regenerateSessionTitle...`)
 
     // Notify renderer that title regeneration has started (for shimmer effect)
@@ -2388,8 +2416,12 @@ export class SessionManager {
     this.sendEvent({ type: 'title_regenerating', sessionId, isRegenerating: true }, managed.workspace.id)
 
     try {
-      const title = await regenerateSessionTitle(userMessages, assistantResponse)
+      const title = await regenerateSessionTitle(userMessages, assistantResponse, toolSummary)
       sessionLog.info(`refreshTitle: regenerateSessionTitle returned: ${title ? `"${title}"` : 'null'}`)
+      if (mySeq !== managed.titleGenSeq) {
+        sessionLog.info(`refreshTitle (seq=${mySeq}) superseded by seq=${managed.titleGenSeq}, discarding`)
+        return { success: false, error: 'Superseded by newer title generation' }
+      }
       if (title) {
         managed.name = title
         this.persistSession(managed)
@@ -3327,9 +3359,14 @@ To view this task's output:
    * Called asynchronously when the first user message is received.
    */
   private async generateTitle(managed: ManagedSession, userMessage: string): Promise<void> {
-    sessionLog.info(`Starting title generation for session ${managed.id}`)
+    const mySeq = ++managed.titleGenSeq
+    sessionLog.info(`Starting title generation for session ${managed.id} (seq=${mySeq})`)
     try {
       const title = await generateSessionTitle(userMessage)
+      if (mySeq !== managed.titleGenSeq) {
+        sessionLog.info(`Title generation (seq=${mySeq}) superseded by seq=${managed.titleGenSeq}, discarding`)
+        return
+      }
       if (title) {
         managed.name = title
         this.persistSession(managed)

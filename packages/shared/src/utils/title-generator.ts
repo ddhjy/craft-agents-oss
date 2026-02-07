@@ -76,7 +76,8 @@ export async function generateSessionTitle(
  */
 export async function regenerateSessionTitle(
   recentUserMessages: string[],
-  lastAssistantResponse: string
+  lastAssistantResponse: string,
+  toolSummary?: string
 ): Promise<string | null> {
   try {
     // Combine recent user messages, taking up to 300 chars from each
@@ -85,7 +86,7 @@ export async function regenerateSessionTitle(
       .join('\n\n');
     const assistantSnippet = lastAssistantResponse.slice(0, 500);
 
-    const prompt = [
+    const parts = [
       'Based on these recent messages, what is the current focus of this conversation?',
       'Reply with ONLY a short task description (2-5 words).',
       'Start with a verb. Use plain text only - no markdown.',
@@ -96,9 +97,14 @@ export async function regenerateSessionTitle(
       '',
       'Latest assistant response:',
       assistantSnippet,
-      '',
-      'Current focus:',
-    ].join('\n');
+    ];
+
+    if (toolSummary) {
+      parts.push('', 'Tools used by assistant:', toolSummary);
+    }
+
+    parts.push('', 'Current focus:');
+    const prompt = parts.join('\n');
 
     const defaultOptions = getDefaultOptions();
     const options = {
