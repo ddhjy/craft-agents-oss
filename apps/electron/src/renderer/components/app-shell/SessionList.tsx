@@ -442,7 +442,12 @@ function SessionItem({
             "flex w-full items-start gap-2 pl-2 pr-4 py-3 text-left text-sm outline-none rounded-[8px]",
             isSelected && "bg-foreground/5"
           )}
-          onMouseDown={handleClick}
+          onMouseDown={(e) => {
+            if (e.button === 0) handleClick()
+            else if (e.button === 2) e.preventDefault()
+          }}
+          onClick={() => {}}
+          onFocus={itemProps.onFocus}
           onKeyDown={(e) => {
             itemProps.onKeyDown(e)
             onKeyDown(e, item)
