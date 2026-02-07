@@ -428,7 +428,7 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
       icon={<Pin className={cn("h-5 w-5", isPinned && "fill-current")} />}
       onClick={handleTogglePin}
 
-      className={cn('transition-none', isPinned && 'text-accent hover:text-accent active:text-accent')}
+      className={cn('transition-none', isPinned ? 'text-accent hover:text-accent active:text-accent' : 'text-foreground hover:text-foreground')}
     />
   ), [isPinned, handleTogglePin])
 
