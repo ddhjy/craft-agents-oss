@@ -25,9 +25,9 @@ import {
   HelpCircle,
   ExternalLink,
   Store,
+  PanelRight,
+  PanelLeft,
 } from "lucide-react"
-import { PanelRightRounded } from "../icons/PanelRightRounded"
-import { PanelLeftRounded } from "../icons/PanelLeftRounded"
 // TodoStateIcons no longer used - icons come from dynamic todoStates
 import { SourceAvatar } from "@/components/ui/source-avatar"
 import { AppMenu, type ViewMode } from "../AppMenu"
@@ -1425,7 +1425,7 @@ function AppShellContent({
         style={{ pointerEvents: isRightSidebarVisible ? 'none' : 'auto' }}
       >
         <HeaderIconButton
-          icon={<PanelRightRounded className="h-5 w-6" />}
+          icon={<PanelRight className="h-5 w-5" />}
           onClick={() => setIsRightSidebarVisible(true)}
           tooltip="Open sidebar"
           className="text-foreground"
@@ -1440,7 +1440,7 @@ function AppShellContent({
 
     return (
       <HeaderIconButton
-        icon={<PanelLeftRounded className="h-5 w-6" />}
+        icon={<PanelLeft className="h-5 w-5" />}
         onClick={() => setIsRightSidebarVisible(false)}
         tooltip="Close sidebar"
         className="text-foreground"
