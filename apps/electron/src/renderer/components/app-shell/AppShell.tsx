@@ -1425,10 +1425,10 @@ function AppShellContent({
         style={{ pointerEvents: isRightSidebarVisible ? 'none' : 'auto' }}
       >
         <HeaderIconButton
-          icon={<PanelRight className="h-5 w-5" />}
+          icon={<PanelRight className="h-4 w-4" />}
           onClick={() => setIsRightSidebarVisible(true)}
 
-          className="text-foreground"
+          className="text-foreground/70"
         />
       </motion.div>
     )
@@ -1440,10 +1440,10 @@ function AppShellContent({
 
     return (
       <HeaderIconButton
-        icon={<PanelLeft className="h-5 w-5" />}
+        icon={<PanelLeft className="h-4 w-4" />}
         onClick={() => setIsRightSidebarVisible(false)}
 
-        className="text-foreground"
+        className="text-foreground/70"
       />
     )
   }, [isRightSidebarVisible])

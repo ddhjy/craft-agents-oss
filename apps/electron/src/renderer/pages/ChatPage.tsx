@@ -368,7 +368,7 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <HeaderIconButton
-          icon={<Share className={cn("h-5 w-5", sharedUrl && "fill-current")} />}
+          icon={<Share className={cn("h-4 w-4", sharedUrl && "fill-current")} />}
           className={sharedUrl ? 'text-accent' : 'text-foreground'}
         />
       </DropdownMenuTrigger>
@@ -425,7 +425,7 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
   // Pin button for always-on-top mode
   const pinButton = React.useMemo(() => (
     <HeaderIconButton
-      icon={<Pin className={cn("h-5 w-5", isPinned && "fill-current")} />}
+      icon={<Pin className={cn("h-4 w-4", isPinned && "fill-current")} />}
       onClick={handleTogglePin}
 
       className={cn('transition-none', isPinned ? 'text-accent hover:text-accent active:text-accent' : 'text-foreground hover:text-foreground')}
@@ -707,8 +707,8 @@ function OpenInButton({ workingDirectory }: { workingDirectory?: string }) {
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
         <HeaderIconButton
-          icon={<FolderOpen className="h-5 w-5" />}
-          className={cn("text-foreground", isOpen && "bg-foreground/5")}
+          icon={<FolderOpen className="h-4 w-4" />}
+          className={cn("text-foreground/70", isOpen && "bg-foreground/5")}
         />
       </DropdownMenuTrigger>
       <StyledDropdownMenuContent side="bottom" align="end" sideOffset={8} className="min-w-[200px]">
