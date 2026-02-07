@@ -2156,10 +2156,19 @@ function GitBranchBadge({
       if (cancelled || inFlight) return
       inFlight = true
       try {
-        const status = await window.electronAPI.getGitStatus(normalizedWorkingDirectory)
-        if (!cancelled) setGitStatus(status)
+        const [status, branch] = await Promise.all([
+          window.electronAPI.getGitStatus(normalizedWorkingDirectory),
+          window.electronAPI.getGitBranch?.(normalizedWorkingDirectory) ?? Promise.resolve(null),
+        ])
+        if (!cancelled) {
+          setGitStatus(status)
+          setGitBranch(branch)
+        }
       } catch {
-        if (!cancelled) setGitStatus(null)
+        if (!cancelled) {
+          setGitStatus(null)
+          setGitBranch(null)
+        }
       } finally {
         inFlight = false
       }
