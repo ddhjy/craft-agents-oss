@@ -16,7 +16,6 @@ import { toast } from 'sonner'
 import { HeaderIconButton } from '@/components/ui/HeaderIconButton'
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { StyledDropdownMenuContent, StyledDropdownMenuItem, StyledDropdownMenuSeparator } from '@/components/ui/styled-dropdown'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@craft-agent/ui'
 import { cn } from '@/lib/utils'
 import type { AvailableApp } from '../../../shared/types'
 import { useAppShellContext, usePendingPermission, usePendingCredential, useSessionOptionsFor, useSession as useSessionData } from '@/context/AppShellContext'
@@ -428,7 +427,7 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
     <HeaderIconButton
       icon={<Pin className={cn("h-5 w-5", isPinned && "fill-current")} />}
       onClick={handleTogglePin}
-      tooltip={isPinned ? "Unpin window" : "Pin window on top"}
+
       className={cn('transition-none', isPinned && 'text-accent hover:text-accent active:text-accent')}
     />
   ), [isPinned, handleTogglePin])
@@ -706,17 +705,12 @@ function OpenInButton({ workingDirectory }: { workingDirectory?: string }) {
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DropdownMenuTrigger asChild>
-            <HeaderIconButton
-              icon={<FolderOpen className="h-5 w-5" />}
-              className={cn("text-foreground", isOpen && "bg-foreground/5")}
-            />
-          </DropdownMenuTrigger>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">Open folder in app</TooltipContent>
-      </Tooltip>
+      <DropdownMenuTrigger asChild>
+        <HeaderIconButton
+          icon={<FolderOpen className="h-5 w-5" />}
+          className={cn("text-foreground", isOpen && "bg-foreground/5")}
+        />
+      </DropdownMenuTrigger>
       <StyledDropdownMenuContent side="bottom" align="end" sideOffset={8} className="min-w-[200px]">
         {availableApps.map((app, index) => (
           <StyledDropdownMenuItem
