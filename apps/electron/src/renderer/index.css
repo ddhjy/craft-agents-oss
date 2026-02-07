@@ -459,7 +459,9 @@ html[data-font="inter"] {
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Scrollbar styling - hidden by default, visible on hover */
+  /* Scrollbar styling - hidden by default, visible only while scrolling.
+     The [data-scrolling] attribute is toggled by lib/scrollbar-auto-hide.ts
+     for native scrollable elements, and by the ScrollArea component for Radix viewports. */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -474,14 +476,14 @@ html[data-font="inter"] {
     border-radius: 10px;
     border: 3px solid transparent;
     background-clip: content-box;
+    transition: background-color 0.2s ease;
   }
 
-  *:hover > ::-webkit-scrollbar-thumb,
-  *:hover::-webkit-scrollbar-thumb {
+  [data-scrolling]::-webkit-scrollbar-thumb {
     background-color: var(--border);
   }
 
-  ::-webkit-scrollbar-thumb:hover {
+  [data-scrolling]::-webkit-scrollbar-thumb:hover {
     background-color: var(--muted-foreground);
   }
 
