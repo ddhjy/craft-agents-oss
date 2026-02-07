@@ -467,7 +467,7 @@ function SessionItem({
               </div>
             </div>
             {/* Subtitle row — badges scroll horizontally when they overflow */}
-            <div className="flex items-center gap-1.5 text-xs text-foreground/70 w-full -mb-[2px] min-w-0">
+            <div className="flex items-center gap-1.5 text-xs text-foreground/70 w-full -mb-[2px] min-w-0 min-h-[18px]">
               {/* Fixed indicators (Spinner + New) — always visible */}
               {item.isProcessing && (
                 <Spinner className="text-[8px] text-foreground shrink-0" />
