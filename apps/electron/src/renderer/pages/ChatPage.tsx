@@ -433,7 +433,7 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
   // Pin button for always-on-top mode
   const pinButton = React.useMemo(() => (
     <HeaderIconButton
-      icon={<Pin className={cn("h-4 w-4", isPinned && "fill-current")} />}
+      icon={<Pin className={cn("h-5 w-5", isPinned && "fill-current")} />}
       onClick={handleTogglePin}
       tooltip={isPinned ? "Unpin window" : "Pin window on top"}
       className={isPinned ? 'text-accent' : 'text-foreground'}

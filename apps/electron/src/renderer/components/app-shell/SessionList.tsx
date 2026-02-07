@@ -459,7 +459,7 @@ function SessionItem({
             {/* Title - up to 2 lines, with shimmer during async operations (sharing, title regen, etc.) */}
             <div className="flex items-start gap-2 w-full pr-6 min-w-0">
               <div className={cn(
-                "font-medium font-sans line-clamp-2 min-w-0 -mb-[2px]",
+                "font-medium font-sans line-clamp-2 min-w-0 -mb-[2px] break-all",
                 item.isAsyncOperationOngoing && "animate-shimmer-text"
               )}>
                 {searchQuery ? highlightMatch(getSessionTitle(item), searchQuery) : getSessionTitle(item)}
