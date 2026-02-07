@@ -842,14 +842,12 @@ html.dark[data-scenic] .fullscreen-overlay-background {
    Uses :has() to target adjacent sibling separators.
 ============================================================================= */
 
-/* Hide own separator when item is hovered or selected */
-.session-item:hover > .session-separator,
+/* Hide own separator when item is selected */
 .session-item[data-selected] > .session-separator {
   opacity: 0;
 }
 
-/* Hide next item's separator when current item is hovered or selected */
-.session-item:hover + .session-item > .session-separator,
+/* Hide next item's separator when current item is selected */
 .session-item[data-selected] + .session-item > .session-separator {
   opacity: 0;
 }
